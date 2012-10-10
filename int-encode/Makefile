@@ -1,4 +1,4 @@
-LDFLAGS=-laprutil-1
+CC=gcc -g
 
 %.o: %.c
 	$(CC) -c $< -o $@

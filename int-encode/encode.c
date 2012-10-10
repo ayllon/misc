@@ -1,4 +1,3 @@
-#include <apr-1/apr_base64.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -54,6 +53,48 @@ size_t decode(const unsigned char *data, size_t nbytes,
   return outp;
 }
 
+
+
+static uint8_t base64_digit(uint8_t value)
+{
+  if (value < 26)       return 'A' + value;
+  else if (value < 52)  return 'a' + value - 26;
+  else if (value < 62)  return '0' + value - 52;
+  else if (value == 62) return '+';
+  else if (value == 63) return '/';
+  else                  abort(); 
+}
+
+
+int base64_encode(const unsigned char *in, size_t inbytes, unsigned char *out, size_t outsize)
+{
+  size_t ii, oi, padding;
+ 
+  for (ii = 0, oi = 0; ii < inbytes && oi < outsize; ) {
+    uint8_t byte1 = ii < inbytes ? in[ii++] : 0;
+    uint8_t byte2 = ii < inbytes ? in[ii++] : 0;
+    uint8_t byte3 = ii < inbytes ? in[ii++] : 0;
+
+    uint32_t triplet = (byte1 << 16) | (byte2 << 8) | (byte3);
+
+    if (oi < outsize) out[oi++] = base64_digit((triplet >> 18) & 0x3F);
+    if (oi < outsize) out[oi++] = base64_digit((triplet >> 12) & 0x3F);
+    if (oi < outsize) out[oi++] = base64_digit((triplet >>  6) & 0x3F);
+    if (oi < outsize) out[oi++] = base64_digit((triplet) & 0x3F);
+  }
+
+  if (oi >= outsize) return 0;
+
+  padding = (3 - (inbytes % 3)) % 3;
+
+  for (ii = 0; ii < padding; ++ii) {
+    out[oi - 1 - ii] = '=';
+  }
+
+  out[oi++] = '\0';
+  return oi; 
+}
+
 #define ARRAY_LEN 10
 
 int main(int argc, char *argv[])
@@ -98,7 +139,7 @@ int main(int argc, char *argv[])
   printf("All OK :)\n");
 
   /* Base 64 */
-  n2 = apr_base64_encode_binary(base64, buffer, n);
+  n2 = base64_encode(buffer, n, base64, sizeof(base64)); 
   base64[n2] = '\0';
   printf("Base 64 encoding (%ld characters): %s\n", n2, base64);
 
