@@ -122,6 +122,7 @@ size_t base64_decode(const unsigned char *in, unsigned char *out, size_t outsize
       digit   = in[ii++];
       if (digit == '=') break;
       triplet = (triplet << 6) | base64_value(digit);
+      if (errno != 0) return 0;
     } while (in[ii] != '\0' && ii % 4);
 
     if (digit == '=' && in[ii] == '=') {
@@ -204,7 +205,11 @@ int main(int argc, char *argv[])
 
   /* Decode */
   n2 = base64_decode(base64, buffer2, sizeof(buffer2));
-  if (n2 != n) {
+  if (n2 == 0 && errno) {
+    printf("Error decoding (invalid digit?): %s\n", strerror(errno));
+    return 1;
+  }
+  else if (n2 != n) {
     printf("Expected %d bytes, got %d\n", n, n2);
     return 1;
   }
