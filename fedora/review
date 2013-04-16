@@ -1,0 +1,80 @@
+rpmlint output
+==============
+
+
+MUST
+====
+
+Missing Makefile original source.
+
+[  ] The package must be named according to the Package Naming Guidelines.
+[  ] Package does not use a name that already exist.
+[  ] The spec file name must match the base package %{name}, in the format %{name}.spec
+[  ] Spec file lacks Packager, Vendor, PreReq tags.
+[  ] Changelog in prescribed format.
+[  ] The package must be licensed with a Fedora approved license and meet the Licensing Guidelines.
+[  ] The License field in the package spec file must match the actual license.
+[  ] The spec file must be written in American English.
+[  ] The spec file for the package MUST be legible.
+[  ] If a rename, provides/obsoletes is specified.
+[  ] The spec file MUST handle locales properly.
+[  ] Every binary RPM package which stores shared library files in any of the dynamic linker's default paths, must call ldconfig in %post and %postun.
+
+[  ] If the source package includes the text of the license(s) in its own file, then that file, containing the text of the license(s) for the package must be included in %doc.
+[  ] -debuginfo package or justification otherwise.
+[  ] Development files must be in a -devel package.
+[  ] Static libraries must be in a -static package.
+[  ] Devel packages must require the base package using a fully versioned dependency
+[  ] Large documentation files must go in a -doc subpackage.
+
+[  ] The sources used to build the package must match the upstream source, as provided in the spec URL.
+
+	The .spec file instructions for retrieving upstream do not match the revision used for the given srpm
+	(it is just missing the specific revision as a parameter)
+
+[  ] The package must contain code, or permissable content.
+
+[  ] Package obeys FHS, except libexecdir and /usr/target.
+[  ] Packages must NOT contain any .la libtool archives.
+[  ] Packages must not own files or directories already owned by other packages
+[  ] Packages containing GUI applications must include a %{name}.desktop file.
+[  ] A Fedora package must not list a file more than once in the spec file's %files listings.
+[  ] A package must own all directories that it creates. If it does not create a directory that it uses, then it should require a package which does create that directory.
+[  ] Packages must NOT bundle copies of system libraries
+[  ] If the package is designed to be relocatable, the packager must state this fact in the request for review, along with the rationalization for relocation of that specific package.
+[  ] All filenames in rpm packages must be valid UTF-8.
+[  ] Permissions on files must be set properly.
+
+[  ] Each package must consistently use macros.
+[  ] No external kernel modules
+[  ] No inclusion of pre-built binaries or libraries
+[  ] No need for external bits
+[  ] All build dependencies must be listed in BuildRequires.
+[  ] If a package includes something as %doc, it must not affect the runtime of the application.
+[  ] %build honors applicable compiler flags or justifies otherwise.
+
+	The makefile is overriding the CFLAGS with '-O2 -g -pipe -Wall'
+	https://fedoraproject.org/wiki/Packaging:Guidelines?rd=Packaging/Guidelines#Compiler_flags
+
+[  ] The package MUST successfully compile and build into binary rpms on at least one primary architecture.
+[  ] If the package does not successfully compile, build or work on an architecture, then those architectures should be listed in the spec in ExcludeArch.
+[  ] Package installs properly.
+
+SHOULD
+======
+[  ] All patches have an upstream bug link or comment
+[  ] The source package does not include license text(s) as a separate file from upstream.
+[  ] No PreReq
+[  ] %makeinstall is not used
+[  ] Timestamp is preserved
+[  ] Parallel make
+[  ] Subpackages other than devel should require the base package using a fully versioned dependency.
+[  ] If the package has file dependencies outside of /etc, /bin, /sbin, /usr/bin, or /usr/sbin consider requiring the package which provides the file instead of the file itself.
+[  ] The placement of pkgconfig(.pc) files should be in a -devel pkg
+[  ] The package builds in mock.
+[  ] The package should compile and build into binary rpms on all supported architectures.
+[  ] The package functions as described.
+[  ] If scriptlets are used, those scriptlets must be sane.
+[  ] The package should contain man pages for binaries/scripts
+[  ] The description and summary sections in the package spec file should contain translations for supported Non-English languages, if available.
+
