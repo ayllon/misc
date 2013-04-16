@@ -5,8 +5,6 @@ rpmlint output
 MUST
 ====
 
-Missing Makefile original source.
-
 [  ] The package must be named according to the Package Naming Guidelines.
 [  ] Package does not use a name that already exist.
 [  ] The spec file name must match the base package %{name}, in the format %{name}.spec
@@ -29,9 +27,6 @@ Missing Makefile original source.
 
 [  ] The sources used to build the package must match the upstream source, as provided in the spec URL.
 
-	The .spec file instructions for retrieving upstream do not match the revision used for the given srpm
-	(it is just missing the specific revision as a parameter)
-
 [  ] The package must contain code, or permissable content.
 
 [  ] Package obeys FHS, except libexecdir and /usr/target.
@@ -53,7 +48,6 @@ Missing Makefile original source.
 [  ] If a package includes something as %doc, it must not affect the runtime of the application.
 [  ] %build honors applicable compiler flags or justifies otherwise.
 
-	The makefile is overriding the CFLAGS with '-O2 -g -pipe -Wall'
 	https://fedoraproject.org/wiki/Packaging:Guidelines?rd=Packaging/Guidelines#Compiler_flags
 
 [  ] The package MUST successfully compile and build into binary rpms on at least one primary architecture.
