@@ -200,7 +200,7 @@ public:
         CPPUNIT_ASSERT_EQUAL(5ul, fProf.nCalls);
         CPPUNIT_ASSERT_EQUAL(5ul,  fProf.nExceptions);
         CPPUNIT_ASSERT(50 <= fProf.totalTime);
-        CPPUNIT_ASSERT(55 >= fProf.totalTime);
+        CPPUNIT_ASSERT(60 >= fProf.totalTime);
         // Actually called
         CPPUNIT_ASSERT_EQUAL(5u, instance.getXCalled);
     }
@@ -217,7 +217,7 @@ public:
         CPPUNIT_ASSERT_EQUAL(15ul, fProf.nCalls);
         CPPUNIT_ASSERT_EQUAL( 5ul,  fProf.nExceptions);
         CPPUNIT_ASSERT(140 <= fProf.totalTime);
-        CPPUNIT_ASSERT(150 >= fProf.totalTime);
+        CPPUNIT_ASSERT(160 >= fProf.totalTime);
 
         std::cerr << std::endl << fProf << std::endl;
     }
