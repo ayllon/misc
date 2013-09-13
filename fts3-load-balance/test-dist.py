@@ -2,6 +2,7 @@
 import hashlib
 import sys
 
+
 def hexdump(bytes):
     str = ''
     for b in bytes:
@@ -20,10 +21,10 @@ def hash_segment(index, total):
     MAX = 0xFFFFFF
     MIN = 0x000000
     segsize = (MAX - MIN) / total
-    segmod  = (MAX - MIN) % total;
+    segmod = (MAX - MIN) % total
 
     start = MIN + segsize * index
-    end   = MIN + segsize * (index + 1) - 1
+    end = MIN + segsize * (index + 1) - 1
     # The last one take over what is left
     if index == total - 1:
         end += segmod + 1
@@ -58,9 +59,9 @@ for i in range(nhosts):
     segment = hash_segment(i, nhosts)
 
     # Count how many fit
-    count = len(filter(lambda id: segment[0] <= id and id <= segment[1], id_hashes))
-    print "\tHost %s with hash interval [%s, %s]: %d elements" % (host, segment[0], segment[1], count)
+    count = len(filter(lambda id: segment[0] <= id <= segment[1], id_hashes))
+    print "\tHost %s with hash interval [%s, %s]: %d elements"\
+        % (host, segment[0], segment[1], count)
     totalCount += count
 
 assert (totalCount == nids)
-
