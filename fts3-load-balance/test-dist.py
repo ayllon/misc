@@ -11,15 +11,15 @@ def hexdump(bytes):
 
 
 def hash(id):
-    m = hashlib.sha1()
+    m = hashlib.md5()
     m.update(str(id))
     full_hash = hexdump(m.digest())
-    return full_hash[:4]
+    return full_hash[:8]
 
 
 def hash_segment(index, total):
-    MAX = 0xFFFFFF
-    MIN = 0x000000
+    MAX = 0xFFFFFFFF
+    MIN = 0x00000000
     segsize = (MAX - MIN) / total
     segmod = (MAX - MIN) % total
 
@@ -29,7 +29,7 @@ def hash_segment(index, total):
     if index == total - 1:
         end += segmod + 1
 
-    limits = ("%06x" % start, "%06x" % end)
+    limits = ("%08x" % start, "%08x" % end)
     return limits
 
 
