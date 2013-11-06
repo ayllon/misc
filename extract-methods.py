@@ -21,7 +21,7 @@ def run_gccxml(path, includes):
 
 
 def get_file_id(xml, path):
-    matching = xml.xpath("File[@name='%s']" % args.path)
+    matching = xml.xpath("File[@name='%s']" % path)
     if len(matching) == 0:
         raise Exception('Source file not found in the intermediate xml')
     fileNode = matching[0]
