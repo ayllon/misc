@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import hashlib
 import sys
+from datetime import datetime
 
 
 def hexdump(bytes):
@@ -33,6 +34,15 @@ def hash_segment(index, total):
     return limits
 
 
+def mock_hash(index):
+    source = 'http://something.com/path'
+    dest   = 'http://something.com/dest/' + str(index % 50)
+    now = datetime.utcnow()
+
+    hashable = ''.join([source, dest, str(now)])
+    return  hash(hashable)
+
+
 # From args
 if len(sys.argv) < 3:
     print "Missing parameters"
@@ -47,7 +57,7 @@ nhosts = int(sys.argv[2])
 print "Generating hashes"
 id_hashes = []
 for i in range(nids):
-    id_hashes.append(hash(i))
+    id_hashes.append(mock_hash(i))
 
 
 # Simulate for n hosts
