@@ -29,6 +29,6 @@ int main() {
   eval("sqrt 66");
   eval("3+sqrt(ID)", {{"ID", 42}});
   eval("sqrt");
-  eval("pow(4, 5)");
+  eval("!(true && true) || !false");
   return 0;
 }

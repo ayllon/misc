@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cmath>
 #include <functional>
+#include <iostream>
 
 #include "Evaluator.h"
 
@@ -12,49 +13,49 @@ namespace Arithmetic {
  * Implements the separation logic for the tokenizer
  */
 struct ArithmeticSeparator {
-    void reset() {}
+  void reset() {}
 
-    template<typename Iterator>
-    Iterator findEndOfOperator(Iterator start, Iterator end) {
-      return start + 1;
+  template<typename Iterator>
+  Iterator findEndOfOperator(Iterator start, Iterator end) {
+    return start + 1;
+  }
+
+  template<typename InputIterator, typename Token>
+  bool operator()(InputIterator &next, InputIterator end, Token &tok) {
+    tok.clear();
+
+    // Skip spaces
+    while (std::isspace(*next) || *next == ',') {
+      ++next;
     }
 
-    template<typename InputIterator, typename Token>
-    bool operator()(InputIterator &next, InputIterator end, Token &tok) {
-      tok.clear();
-
-      // Skip spaces
-      while (std::isspace(*next) || *next == ',') {
-        ++next;
-      }
-
-      if (next == end) {
-        return false;
-      }
-
-      // Numbers and names
-      if (std::isalnum(*next)) {
-        auto begin = next;
-        while (next != end && std::isalnum(*next)) {
-          ++next;
-        }
-        tok.assign(begin, next);
-      }
-        // Parenthesis are individual
-      else if (*next == '(' || *next == ')') {
-        tok.assign(next, next + 1);
-        ++next;
-      }
-        // Just bind together operator characters, except parenthesis
-      else {
-        auto begin = next;
-        while (next != end && !(std::isalnum(*next) || std::isspace(*next) || *next == '(' || *next == ')')) {
-          ++next;
-        }
-        tok.assign(begin, next);
-      }
-      return true;
+    if (next == end) {
+      return false;
     }
+
+    // Numbers and names
+    if (std::isalnum(*next)) {
+      auto begin = next;
+      while (next != end && std::isalnum(*next)) {
+        ++next;
+      }
+      tok.assign(begin, next);
+    }
+    // Parenthesis are individual
+    else if (*next == '(' || *next == ')') {
+      tok.assign(next, next + 1);
+      ++next;
+    }
+    // Just bind together operator characters, except parenthesis
+    else {
+      auto begin = next;
+      while (next != end && !(std::isalnum(*next) || std::isspace(*next) || *next == '(' || *next == ')')) {
+        ++next;
+      }
+      tok.assign(begin, next);
+    }
+    return true;
+  }
 };
 
 
@@ -118,25 +119,26 @@ void Evaluator::parse(std::string const &expr) {
       if (op_i->first == "(") {
         operators.push_back(*op_i);
       }
-        // Close parenthesis
+      // Close parenthesis
       else if (op_i->first == ")") {
         while (!operators.empty() && operators.back().first != "(") {
           compiled.push_back(operators.back().second);
           operators.pop_back();
         }
-        if (operators.empty() || operators.back().first != "(") {
+        if (operators.empty()) {
           throw Error("Unbalanced parenthesis");
         }
         operators.pop_back();
       }
-        // Rest
+      // Rest
       else {
         while (!operators.empty()) {
           // If last_op is null, then it is a function
           auto last_op = dynamic_cast<Operator *>(operators.back().second.get());
           if (!(last_op == nullptr ||
                 (last_op->getPrecedence() < op_i->second->getPrecedence() ||
-                 last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative()))) {
+                 last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative())
+                ) || operators.back().first == "(") {
             break;
           }
 
@@ -171,11 +173,11 @@ void Evaluator::parse(std::string const &expr) {
 }
 
 
-class OperatorAdapter : public Operator {
+class BinaryOperatorAdapter : public Operator {
 public:
     typedef std::function<double(double, double)> Functor;
 
-    OperatorAdapter(Functor f, unsigned precedence, bool leftAssociative, const char *repr) :
+    BinaryOperatorAdapter(Functor f, unsigned precedence, bool leftAssociative, const char *repr) :
         m_f(f), m_precedence(precedence), m_leftAssociative(leftAssociative), m_repr(repr) {
     }
 
@@ -205,6 +207,36 @@ private:
     const char *m_repr;
 };
 
+class UnaryOperatorAdapter : public Operator {
+public:
+    typedef std::function<double(double)> Functor;
+
+    UnaryOperatorAdapter(Functor f, unsigned precedence, bool leftAssociative, const char *repr) :
+        m_f(f), m_precedence(precedence), m_leftAssociative(leftAssociative), m_repr(repr) {
+    }
+
+    unsigned getPrecedence() const override {
+      return m_precedence;
+    }
+
+    bool isLeftAssociative() const override {
+      return m_leftAssociative;
+    }
+
+    void eval(EvalContext &context) const override {
+      context.push(m_f(context.pop()));
+    }
+
+    std::string repr() const override {
+      return m_repr;
+    }
+
+private:
+    Functor m_f;
+    unsigned m_precedence;
+    bool m_leftAssociative;
+    const char *m_repr;
+};
 
 class ModOperator : public Operator {
 public:
@@ -232,19 +264,20 @@ Evaluator::Evaluator(std::string const &expr,
     : knownOperators{
     {"(",  nullptr},
     {")",  nullptr},
-    {"*",  std::make_shared<OperatorAdapter>(std::multiplies<double>(), 3, true, "*")},
-    {"/",  std::make_shared<OperatorAdapter>(std::divides<double>(), 3, true, "*")},
+    {"!",  std::make_shared<UnaryOperatorAdapter>(std::logical_not<double>(), 2, false, "!")},
+    {"*",  std::make_shared<BinaryOperatorAdapter>(std::multiplies<double>(), 3, true, "*")},
+    {"/",  std::make_shared<BinaryOperatorAdapter>(std::divides<double>(), 3, true, "*")},
     {"%",  std::make_shared<ModOperator>()},
-    {"+",  std::make_shared<OperatorAdapter>(std::plus<double>(), 4, true, "+")},
-    {"-",  std::make_shared<OperatorAdapter>(std::minus<double>(), 4, true, "-")},
-    {"<",  std::make_shared<OperatorAdapter>(std::less<double>(), 6, true, "<")},
-    {">",  std::make_shared<OperatorAdapter>(std::greater<double>(), 6, true, ">")},
-    {"<=", std::make_shared<OperatorAdapter>(std::less_equal<double>(), 6, true, "<=")},
-    {">=", std::make_shared<OperatorAdapter>(std::greater_equal<double>(), 6, true, ">=")},
-    {"==", std::make_shared<OperatorAdapter>(std::equal_to<double>(), 7, true, "==")},
-    {"!=", std::make_shared<OperatorAdapter>(std::not_equal_to<double>(), 7, true, "!=")},
-    {"&&", std::make_shared<OperatorAdapter>(std::logical_and<double>(), 11, true, "&&")},
-    {"||", std::make_shared<OperatorAdapter>(std::logical_or<double>(), 12, true, "||")},
+    {"+",  std::make_shared<BinaryOperatorAdapter>(std::plus<double>(), 4, true, "+")},
+    {"-",  std::make_shared<BinaryOperatorAdapter>(std::minus<double>(), 4, true, "-")},
+    {"<",  std::make_shared<BinaryOperatorAdapter>(std::less<double>(), 6, true, "<")},
+    {">",  std::make_shared<BinaryOperatorAdapter>(std::greater<double>(), 6, true, ">")},
+    {"<=", std::make_shared<BinaryOperatorAdapter>(std::less_equal<double>(), 6, true, "<=")},
+    {">=", std::make_shared<BinaryOperatorAdapter>(std::greater_equal<double>(), 6, true, ">=")},
+    {"==", std::make_shared<BinaryOperatorAdapter>(std::equal_to<double>(), 7, true, "==")},
+    {"!=", std::make_shared<BinaryOperatorAdapter>(std::not_equal_to<double>(), 7, true, "!=")},
+    {"&&", std::make_shared<BinaryOperatorAdapter>(std::logical_and<double>(), 11, true, "&&")},
+    {"||", std::make_shared<BinaryOperatorAdapter>(std::logical_or<double>(), 12, true, "||")},
 }, knownFunctions{functions} {
   parse(expr);
 }
