@@ -1,35 +1,74 @@
 #include <iostream>
+#include <boost/test/unit_test.hpp>
 #include "ArithmeticEval/Evaluator.h"
 #include "ArithmeticEval/Functions.h"
 
+using namespace Arithmetic;
 
-void eval(std::string const &expr, std::map<std::string, double> const &vars = {}) {
-  try {
-    std::cout << "Expression: " << expr << std::endl;
-    Arithmetic::Evaluator evaluator(expr, Arithmetic::AllFunctions());
-    std::cout << "Postfix:    " << evaluator.repr() << std::endl;
-    std::cout << evaluator(vars) << std::endl;
-  }
-  catch (std::exception const &e) {
-    std::cout << "Error: " << e.what() << std::endl;
-  }
-  std::cout << std::endl;
+struct VarFixture {
+  std::map<std::string, double> variables{
+      {"ID", 42},
+      {"a", 10},
+      {"b", 20},
+      {"pi", 3.14}
+  };
+  std::map<std::string, std::shared_ptr<Expression>> functions = AllFunctions();
+};
+
+BOOST_FIXTURE_TEST_SUITE(arithmetic, VarFixture)
+
+BOOST_AUTO_TEST_CASE(EvalConstant) {
+  Evaluator evaluator("5");
+  BOOST_CHECK_EQUAL(evaluator(), 5);
 }
 
-int main() {
-  eval("5");
-  eval("5+3*2");
-  eval("ID", {{"ID", 42}});
-  eval("true && false");
-  eval("(5+3)*2");
-  eval("(5+3)*2 == 11");
-  eval("5+3)*2");
-  eval("5+ID");
-  eval("5+ID", {{"ID", 42}});
-  eval("sqrt 66");
-  eval("3+sqrt(ID)", {{"ID", 42}});
-  eval("sqrt(1, 2+3, 6-5, -)");
-  eval("pow(sqrt(25), 2)");
-  eval("!(true && true) || !false");
-  return 0;
+BOOST_AUTO_TEST_CASE(EvalId) {
+  Evaluator evaluator("ID");
+  BOOST_CHECK_THROW(evaluator(), Error);
+  BOOST_CHECK_THROW(evaluator({{"ANOTHER", 22}}), Error);
+  BOOST_CHECK_EQUAL(evaluator(variables), 42);
 }
+
+BOOST_AUTO_TEST_CASE(SimpleExpression) {
+  Evaluator evaluator("5+2*2");
+  BOOST_CHECK_EQUAL(evaluator(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(ParenthesisExpression) {
+  BOOST_CHECK_EQUAL(Evaluator("(5+2)*2")(), 14);
+}
+
+BOOST_AUTO_TEST_CASE(ParenthesisWithVariables) {
+  BOOST_CHECK_EQUAL(Evaluator("pi+a*b")(variables), 203.14);
+}
+
+BOOST_AUTO_TEST_CASE(Booleans) {
+  BOOST_CHECK_EQUAL(Evaluator("1 && 0")(), 0);
+  BOOST_CHECK_EQUAL(Evaluator("1 && 1")(), 1);
+  BOOST_CHECK_EQUAL(Evaluator("0 && 0")(), 0);
+  BOOST_CHECK_EQUAL(Evaluator("0 || 0")(), 0);
+  BOOST_CHECK_EQUAL(Evaluator("0 || 1")(), 1);
+  BOOST_CHECK_EQUAL(Evaluator("1 || 1")(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(Comparison) {
+  BOOST_CHECK_EQUAL(Evaluator("1 + 2 == 3")(), 1);
+  BOOST_CHECK_EQUAL(Evaluator("1 + 2 == 4")(), 0);
+  BOOST_CHECK_EQUAL(Evaluator("1 + 2 != 3")(), 0);
+  BOOST_CHECK_EQUAL(Evaluator("1 + 2 != 4")(), 1);
+  BOOST_CHECK_EQUAL(Evaluator("1 + 2 < 4")(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(MalformedParenthesis) {
+  BOOST_CHECK_THROW(Evaluator("1 + 2)"), Error);
+  BOOST_CHECK_THROW(Evaluator(")1+2("), Error);
+  BOOST_CHECK_THROW(Evaluator("(1+2("), Error);
+}
+
+BOOST_AUTO_TEST_CASE(BuiltInFunctions) {
+  BOOST_CHECK_EQUAL(Evaluator("sqrt(4+5)", functions)(), 3);
+  BOOST_CHECK_EQUAL(Evaluator("pow(sqrt(25), 2)", functions)(), 25);
+  BOOST_CHECK_EQUAL(Evaluator("true || false", functions)(), 1.);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

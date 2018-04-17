@@ -61,7 +61,7 @@ public:
     Evaluator(std::string const &expr,
                         std::map<std::string, std::shared_ptr<Expression>> const &functions = {});
 
-    double operator()(std::map<std::string, double> const &variables) const;
+    double operator()(std::map<std::string, double> const &variables = {}) const;
 
     std::string repr() const;
 

@@ -126,7 +126,7 @@ void Evaluator::parse(std::string const &expr) {
           operators.pop_back();
         }
         if (operators.empty()) {
-          throw Error("Unbalanced parenthesis");
+          throw Error("Missing opening parenthesis");
         }
         if (op_i->first == ")") {
           operators.pop_back();
@@ -170,6 +170,9 @@ void Evaluator::parse(std::string const &expr) {
   }
 
   for (auto i = operators.rbegin(); i != operators.rend(); ++i) {
+    if (i->first == "(") {
+      throw Error("Missing closing parenthesis");
+    }
     compiled.emplace_back(i->second);
   }
 }
