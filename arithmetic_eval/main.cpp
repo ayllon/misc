@@ -36,6 +36,7 @@ BOOST_AUTO_TEST_CASE(SimpleExpression) {
 
 BOOST_AUTO_TEST_CASE(ParenthesisExpression) {
   BOOST_CHECK_EQUAL(Evaluator("(5+2)*2")(), 14);
+  BOOST_CHECK_EQUAL(Evaluator("((5+2)*(3+4))+1")(), 50);
 }
 
 BOOST_AUTO_TEST_CASE(ParenthesisWithVariables) {
@@ -69,6 +70,7 @@ BOOST_AUTO_TEST_CASE(BuiltInFunctions) {
   BOOST_CHECK_EQUAL(Evaluator("sqrt(4+5)", functions)(), 3);
   BOOST_CHECK_EQUAL(Evaluator("pow(sqrt(25), 2)", functions)(), 25);
   BOOST_CHECK_EQUAL(Evaluator("true || false", functions)(), 1.);
+  BOOST_CHECK_EQUAL(Evaluator("pow(a,2)", functions)(variables), 100);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
