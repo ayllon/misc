@@ -29,11 +29,29 @@ std::string Ln::repr() const {
   return "Ln<1>";
 }
 
+void True::eval(Arithmetic::EvalContext &context) const {
+  context.push(1);
+}
+
+std::string True::repr() const {
+  return "true";
+}
+
+void False::eval(Arithmetic::EvalContext &context) const {
+  context.push(0);
+}
+
+std::string False::repr() const {
+  return "false";
+}
+
 std::map<std::string, std::shared_ptr<Expression>> AllFunctions() {
   return {
     {"sqrt", std::make_shared<Sqrt>()},
     {"pow", std::make_shared<Pow>()},
-    {"ln", std::make_shared<Ln>()}
+    {"ln", std::make_shared<Ln>()},
+    {"true", std::make_shared<True>()},
+    {"false", std::make_shared<False>()}
   };
 };
 

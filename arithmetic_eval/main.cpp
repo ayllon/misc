@@ -20,7 +20,7 @@ int main() {
   eval("5");
   eval("5+3*2");
   eval("ID", {{"ID", 42}});
-  eval("1 && 0");
+  eval("true && false");
   eval("(5+3)*2");
   eval("(5+3)*2 == 11");
   eval("5+3)*2");
@@ -29,5 +29,6 @@ int main() {
   eval("sqrt 66");
   eval("3+sqrt(ID)", {{"ID", 42}});
   eval("sqrt");
+  eval("pow(4, 5)");
   return 0;
 }

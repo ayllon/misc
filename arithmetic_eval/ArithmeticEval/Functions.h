@@ -26,6 +26,20 @@ public:
     std::string repr() const override;
 };
 
+class True: public Expression {
+public:
+    void eval(EvalContext &) const override;
+
+    std::string repr() const override;
+};
+
+class False: public Expression {
+public:
+    void eval(EvalContext &) const override;
+
+    std::string repr() const override;
+};
+
 std::map<std::string, std::shared_ptr<Expression>> AllFunctions();
 
 } // namespace Eval
