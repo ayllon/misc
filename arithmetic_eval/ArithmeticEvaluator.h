@@ -26,6 +26,10 @@ struct EvalContext {
     }
 
     double pop(void) {
+      if (stack.empty()) {
+        throw ArithmeticError("Not enough values on the stack, probably malformed expression");
+      }
+
       double v = stack.back();
       stack.pop_back();
       return v;
@@ -57,6 +61,7 @@ public:
 private:
   std::vector<std::shared_ptr<Expression>> compiled;
   std::map<std::string, std::shared_ptr<Operator>> knownOperators;
+  std::map<std::string, std::shared_ptr<Expression>> knownFunctions;
 
   void parse(std::string const&);
 };

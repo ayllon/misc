@@ -24,5 +24,7 @@ int main() {
   eval("5+3)*2");
   eval("5+ID");
   eval("5+ID", {{"ID", 42}});
+  eval("sqrt 66");
+  eval("3+sqrt(ID)", {{"ID", 42}});
   return 0;
 }

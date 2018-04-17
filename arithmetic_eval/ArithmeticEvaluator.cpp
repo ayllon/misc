@@ -22,7 +22,7 @@ struct ArithmeticSeparator {
     tok.clear();
 
     // Skip spaces
-    while (std::isspace(*next)) {
+    while (std::isspace(*next) || *next == ',') {
       ++next;
     }
 
@@ -105,7 +105,7 @@ public:
 
 
 void ArithmeticEvaluator::parse(std::string const &expr) {
-  std::vector<decltype(knownOperators)::value_type> operators;
+  std::vector<std::pair<std::string, std::shared_ptr<Expression>>> operators;
   boost::tokenizer<ArithmeticSeparator> tokenizer(expr, ArithmeticSeparator());
 
   for (auto token : tokenizer) {
@@ -129,10 +129,15 @@ void ArithmeticEvaluator::parse(std::string const &expr) {
       }
       // Rest
       else {
-        while (!operators.empty() && operators.back().first != "(" &&
-            (operators.back().second->getPrecedence() < op_i->second->getPrecedence() ||
-             (operators.back().second->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative())
-        )) {
+        while(!operators.empty()) {
+          // If last_op is null, then it is a function
+          auto last_op = dynamic_cast<Operator*>(operators.back().second.get());
+          if (!(last_op == nullptr ||
+              (last_op->getPrecedence() < op_i->second->getPrecedence() ||
+               last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative()))) {
+            break;
+          }
+
           compiled.push_back(operators.back().second);
           operators.pop_back();
         }
@@ -145,7 +150,13 @@ void ArithmeticEvaluator::parse(std::string const &expr) {
     }
     // Identifier
     else if (std::isalpha(token[0])) {
-      compiled.emplace_back(new VariableExpression{token});
+      auto fun_i = knownFunctions.find(token);
+      if (fun_i == knownFunctions.end()) {
+        compiled.emplace_back(new VariableExpression{token});
+      }
+      else {
+        operators.push_back(*fun_i);
+      }
     }
     // Unknown!
     else {
@@ -214,9 +225,18 @@ public:
     }
 };
 
+class Sqrt: public Expression {
+public:
+    void eval(EvalContext &context) const override {
+      context.push(std::sqrt(context.pop()));
+    };
 
-ArithmeticEvaluator::ArithmeticEvaluator(std::string const &expr):
-  knownOperators{
+    std::string repr() const override {
+      return "sqrt1";
+    }
+};
+
+ArithmeticEvaluator::ArithmeticEvaluator(std::string const &expr): knownOperators{
     {"(", nullptr},
     {")", nullptr},
     {"*", std::make_shared<OperatorAdapter>(std::multiplies<double>(), 3, true, "*")},
@@ -232,6 +252,8 @@ ArithmeticEvaluator::ArithmeticEvaluator(std::string const &expr):
     {"!=", std::make_shared<OperatorAdapter>(std::not_equal_to<double>(), 7, true, "!=")},
     {"&&", std::make_shared<OperatorAdapter>(std::logical_and<double>(), 11, true, "&&")},
     {"||", std::make_shared<OperatorAdapter>(std::logical_or<double>(), 12, true, "||")},
+  }, knownFunctions {
+    {"sqrt", std::make_shared<Sqrt>()}
   } {
   parse(expr);
 }
