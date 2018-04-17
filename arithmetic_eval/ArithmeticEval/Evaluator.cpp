@@ -148,11 +148,11 @@ void Evaluator::parse(std::string const &expr) {
         operators.push_back(*op_i);
       }
     }
-      // Number
+    // Number
     else if (std::isdigit(token[0])) {
       compiled.emplace_back(new ConstantExpression{token});
     }
-      // Identifier
+    // Identifier
     else if (std::isalpha(token[0])) {
       auto fun_i = knownFunctions.find(token);
       if (fun_i == knownFunctions.end()) {
@@ -161,7 +161,7 @@ void Evaluator::parse(std::string const &expr) {
         operators.push_back(*fun_i);
       }
     }
-      // Unknown!
+    // Unknown!
     else {
       throw Error("Unknown token '" + token + "'");
     }
@@ -238,36 +238,16 @@ private:
     const char *m_repr;
 };
 
-class ModOperator : public Operator {
-public:
-    unsigned getPrecedence() const override {
-      return 3;
-    }
-
-    bool isLeftAssociative() const override {
-      return true;
-    }
-
-    void eval(EvalContext &context) const override {
-      double tmp = context.pop();
-      context.push(std::fmod(context.pop(), tmp));
-    }
-
-    std::string repr() const override {
-      return "%";
-    }
-};
-
 
 Evaluator::Evaluator(std::string const &expr,
-                                         std::map<std::string, std::shared_ptr<Expression>> const &functions)
+                     std::map<std::string, std::shared_ptr<Expression>> const &functions)
     : knownOperators{
     {"(",  nullptr},
     {")",  nullptr},
     {"!",  std::make_shared<UnaryOperatorAdapter>(std::logical_not<double>(), 2, false, "!")},
     {"*",  std::make_shared<BinaryOperatorAdapter>(std::multiplies<double>(), 3, true, "*")},
     {"/",  std::make_shared<BinaryOperatorAdapter>(std::divides<double>(), 3, true, "*")},
-    {"%",  std::make_shared<ModOperator>()},
+    {"%",  std::make_shared<BinaryOperatorAdapter>(::fmod, 3, true, "%")},
     {"+",  std::make_shared<BinaryOperatorAdapter>(std::plus<double>(), 4, true, "+")},
     {"-",  std::make_shared<BinaryOperatorAdapter>(std::minus<double>(), 4, true, "-")},
     {"<",  std::make_shared<BinaryOperatorAdapter>(std::less<double>(), 6, true, "<")},
