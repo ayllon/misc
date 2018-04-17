@@ -25,7 +25,7 @@ struct ArithmeticSeparator {
     tok.clear();
 
     // Skip spaces
-    while (std::isspace(*next) || *next == ',') {
+    while (std::isspace(*next)) {
       ++next;
     }
 
@@ -119,8 +119,8 @@ void Evaluator::parse(std::string const &expr) {
       if (op_i->first == "(") {
         operators.push_back(*op_i);
       }
-      // Close parenthesis
-      else if (op_i->first == ")") {
+      // Close parenthesis and commas
+      else if (op_i->first == ")" || op_i->first == ",") {
         while (!operators.empty() && operators.back().first != "(") {
           compiled.push_back(operators.back().second);
           operators.pop_back();
@@ -128,7 +128,9 @@ void Evaluator::parse(std::string const &expr) {
         if (operators.empty()) {
           throw Error("Unbalanced parenthesis");
         }
-        operators.pop_back();
+        if (op_i->first == ")") {
+          operators.pop_back();
+        }
       }
       // Rest
       else {
@@ -244,6 +246,7 @@ Evaluator::Evaluator(std::string const &expr,
     : knownOperators{
     {"(",  nullptr},
     {")",  nullptr},
+    {",",  nullptr},
     {"!",  std::make_shared<UnaryOperatorAdapter>(std::logical_not<double>(), 2, false, "!")},
     {"*",  std::make_shared<BinaryOperatorAdapter>(std::multiplies<double>(), 3, true, "*")},
     {"/",  std::make_shared<BinaryOperatorAdapter>(std::divides<double>(), 3, true, "*")},
