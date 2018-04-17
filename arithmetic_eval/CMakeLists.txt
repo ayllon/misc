@@ -7,6 +7,14 @@ find_package(Boost REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_executable(arithmetic_eval main.cpp ArithmeticEvaluator.cpp)
+add_library(arithmetic_eval SHARED
+        ArithmeticEval/Evaluator.cpp
+    ArithmeticEval/Functions.cpp
+)
 
-target_link_libraries(arithmetic_eval ${Boost_LIBRARIES})
+add_executable(main main.cpp)
+
+target_link_libraries(main
+    arithmetic_eval
+    ${Boost_LIBRARIES}
+)

@@ -1,10 +1,12 @@
 #include <iostream>
-#include "ArithmeticEvaluator.h"
+#include "ArithmeticEval/Evaluator.h"
+#include "ArithmeticEval/Functions.h"
+
 
 void eval(std::string const &expr, std::map<std::string, double> const &vars = {}) {
   try {
     std::cout << "Expression: " << expr << std::endl;
-    ArithmeticEvaluator evaluator(expr);
+    Arithmetic::Evaluator evaluator(expr, Arithmetic::AllFunctions());
     std::cout << "Postfix:    " << evaluator.repr() << std::endl;
     std::cout << evaluator(vars) << std::endl;
   }
@@ -26,5 +28,6 @@ int main() {
   eval("5+ID", {{"ID", 42}});
   eval("sqrt 66");
   eval("3+sqrt(ID)", {{"ID", 42}});
+  eval("sqrt");
   return 0;
 }

@@ -4,67 +4,69 @@
 #include <cmath>
 #include <functional>
 
-#include "ArithmeticEvaluator.h"
+#include "Evaluator.h"
+
+namespace Arithmetic {
 
 /**
  * Implements the separation logic for the tokenizer
  */
 struct ArithmeticSeparator {
-  void reset() { }
+    void reset() {}
 
-  template<typename Iterator>
-  Iterator findEndOfOperator(Iterator start, Iterator end) {
-    return start + 1;
-  }
-
-  template<typename InputIterator, typename Token>
-  bool operator ()(InputIterator &next, InputIterator end, Token &tok) {
-    tok.clear();
-
-    // Skip spaces
-    while (std::isspace(*next) || *next == ',') {
-      ++next;
+    template<typename Iterator>
+    Iterator findEndOfOperator(Iterator start, Iterator end) {
+      return start + 1;
     }
 
-    if (next == end) {
-      return false;
-    }
+    template<typename InputIterator, typename Token>
+    bool operator()(InputIterator &next, InputIterator end, Token &tok) {
+      tok.clear();
 
-    // Numbers and names
-    if (std::isalnum(*next)) {
-      auto begin = next;
-      while (next != end && std::isalnum(*next)) {
+      // Skip spaces
+      while (std::isspace(*next) || *next == ',') {
         ++next;
       }
-      tok.assign(begin, next);
-    }
-    // Parenthesis are individual
-    else if (*next == '(' || *next == ')') {
-      tok.assign(next, next + 1);
-      ++next;
-    }
-    // Just bind together operator characters, except parenthesis
-    else {
-      auto begin = next;
-      while (next != end && !(std::isalnum(*next) || std::isspace(*next) || *next == '(' || *next == ')')) {
+
+      if (next == end) {
+        return false;
+      }
+
+      // Numbers and names
+      if (std::isalnum(*next)) {
+        auto begin = next;
+        while (next != end && std::isalnum(*next)) {
+          ++next;
+        }
+        tok.assign(begin, next);
+      }
+        // Parenthesis are individual
+      else if (*next == '(' || *next == ')') {
+        tok.assign(next, next + 1);
         ++next;
       }
-      tok.assign(begin, next);
+        // Just bind together operator characters, except parenthesis
+      else {
+        auto begin = next;
+        while (next != end && !(std::isalnum(*next) || std::isspace(*next) || *next == '(' || *next == ')')) {
+          ++next;
+        }
+        tok.assign(begin, next);
+      }
+      return true;
     }
-    return true;
-  }
 };
 
 
-ArithmeticError::ArithmeticError(std::string const &msg): m_what(msg) {}
+Error::Error(std::string const &msg) : m_what(msg) {}
 
 
-const char* ArithmeticError::what() const noexcept {
+const char *Error::what() const noexcept {
   return m_what.c_str();
 }
 
 
-class ConstantExpression: public Expression {
+class ConstantExpression : public Expression {
 private:
     double m_val;
 public:
@@ -82,18 +84,18 @@ public:
 };
 
 
-class VariableExpression: public Expression {
+class VariableExpression : public Expression {
 private:
     std::string m_key;
 
 public:
-    VariableExpression(std::string const &expr): m_key(expr) {
+    VariableExpression(std::string const &expr) : m_key(expr) {
     }
 
     void eval(EvalContext &context) const override {
       auto i = context.variables.find(m_key);
       if (i == context.variables.end()) {
-        throw ArithmeticError("Variable not defined: " + m_key);
+        throw Error("Variable not defined: " + m_key);
       }
       context.push(i->second);
     }
@@ -104,7 +106,7 @@ public:
 };
 
 
-void ArithmeticEvaluator::parse(std::string const &expr) {
+void Evaluator::parse(std::string const &expr) {
   std::vector<std::pair<std::string, std::shared_ptr<Expression>>> operators;
   boost::tokenizer<ArithmeticSeparator> tokenizer(expr, ArithmeticSeparator());
 
@@ -116,25 +118,25 @@ void ArithmeticEvaluator::parse(std::string const &expr) {
       if (op_i->first == "(") {
         operators.push_back(*op_i);
       }
-      // Close parenthesis
+        // Close parenthesis
       else if (op_i->first == ")") {
         while (!operators.empty() && operators.back().first != "(") {
           compiled.push_back(operators.back().second);
           operators.pop_back();
         }
         if (operators.empty() || operators.back().first != "(") {
-          throw ArithmeticError("Unbalanced parenthesis");
+          throw Error("Unbalanced parenthesis");
         }
         operators.pop_back();
       }
-      // Rest
+        // Rest
       else {
-        while(!operators.empty()) {
+        while (!operators.empty()) {
           // If last_op is null, then it is a function
-          auto last_op = dynamic_cast<Operator*>(operators.back().second.get());
+          auto last_op = dynamic_cast<Operator *>(operators.back().second.get());
           if (!(last_op == nullptr ||
-              (last_op->getPrecedence() < op_i->second->getPrecedence() ||
-               last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative()))) {
+                (last_op->getPrecedence() < op_i->second->getPrecedence() ||
+                 last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative()))) {
             break;
           }
 
@@ -144,23 +146,22 @@ void ArithmeticEvaluator::parse(std::string const &expr) {
         operators.push_back(*op_i);
       }
     }
-    // Number
+      // Number
     else if (std::isdigit(token[0])) {
       compiled.emplace_back(new ConstantExpression{token});
     }
-    // Identifier
+      // Identifier
     else if (std::isalpha(token[0])) {
       auto fun_i = knownFunctions.find(token);
       if (fun_i == knownFunctions.end()) {
         compiled.emplace_back(new VariableExpression{token});
-      }
-      else {
+      } else {
         operators.push_back(*fun_i);
       }
     }
-    // Unknown!
+      // Unknown!
     else {
-      throw ArithmeticError("Unknown token '" + token + "'");
+      throw Error("Unknown token '" + token + "'");
     }
   }
 
@@ -170,12 +171,12 @@ void ArithmeticEvaluator::parse(std::string const &expr) {
 }
 
 
-class OperatorAdapter: public Operator {
+class OperatorAdapter : public Operator {
 public:
     typedef std::function<double(double, double)> Functor;
 
-    OperatorAdapter(Functor f, unsigned precedence, bool leftAssociative, const char *repr):
-      m_f(f), m_precedence(precedence), m_leftAssociative(leftAssociative), m_repr(repr) {
+    OperatorAdapter(Functor f, unsigned precedence, bool leftAssociative, const char *repr) :
+        m_f(f), m_precedence(precedence), m_leftAssociative(leftAssociative), m_repr(repr) {
     }
 
     unsigned getPrecedence() const override {
@@ -205,7 +206,7 @@ private:
 };
 
 
-class ModOperator: public Operator {
+class ModOperator : public Operator {
 public:
     unsigned getPrecedence() const override {
       return 3;
@@ -225,41 +226,31 @@ public:
     }
 };
 
-class Sqrt: public Expression {
-public:
-    void eval(EvalContext &context) const override {
-      context.push(std::sqrt(context.pop()));
-    };
 
-    std::string repr() const override {
-      return "sqrt1";
-    }
-};
-
-ArithmeticEvaluator::ArithmeticEvaluator(std::string const &expr): knownOperators{
-    {"(", nullptr},
-    {")", nullptr},
-    {"*", std::make_shared<OperatorAdapter>(std::multiplies<double>(), 3, true, "*")},
-    {"/", std::make_shared<OperatorAdapter>(std::divides<double>(), 3, true, "*")},
-    {"%", std::make_shared<ModOperator>()},
-    {"+", std::make_shared<OperatorAdapter>(std::plus<double>(), 4, true, "+")},
-    {"-", std::make_shared<OperatorAdapter>(std::minus<double>(), 4, true, "-")},
-    {"<", std::make_shared<OperatorAdapter>(std::less<double>(), 6, true, "<")},
-    {">", std::make_shared<OperatorAdapter>(std::greater<double>(), 6, true, ">")},
+Evaluator::Evaluator(std::string const &expr,
+                                         std::map<std::string, std::shared_ptr<Expression>> const &functions)
+    : knownOperators{
+    {"(",  nullptr},
+    {")",  nullptr},
+    {"*",  std::make_shared<OperatorAdapter>(std::multiplies<double>(), 3, true, "*")},
+    {"/",  std::make_shared<OperatorAdapter>(std::divides<double>(), 3, true, "*")},
+    {"%",  std::make_shared<ModOperator>()},
+    {"+",  std::make_shared<OperatorAdapter>(std::plus<double>(), 4, true, "+")},
+    {"-",  std::make_shared<OperatorAdapter>(std::minus<double>(), 4, true, "-")},
+    {"<",  std::make_shared<OperatorAdapter>(std::less<double>(), 6, true, "<")},
+    {">",  std::make_shared<OperatorAdapter>(std::greater<double>(), 6, true, ">")},
     {"<=", std::make_shared<OperatorAdapter>(std::less_equal<double>(), 6, true, "<=")},
     {">=", std::make_shared<OperatorAdapter>(std::greater_equal<double>(), 6, true, ">=")},
     {"==", std::make_shared<OperatorAdapter>(std::equal_to<double>(), 7, true, "==")},
     {"!=", std::make_shared<OperatorAdapter>(std::not_equal_to<double>(), 7, true, "!=")},
     {"&&", std::make_shared<OperatorAdapter>(std::logical_and<double>(), 11, true, "&&")},
     {"||", std::make_shared<OperatorAdapter>(std::logical_or<double>(), 12, true, "||")},
-  }, knownFunctions {
-    {"sqrt", std::make_shared<Sqrt>()}
-  } {
+}, knownFunctions{functions} {
   parse(expr);
 }
 
 
-double ArithmeticEvaluator::operator() (std::map<std::string, double> const &variables) const {
+double Evaluator::operator()(std::map<std::string, double> const &variables) const {
   EvalContext context{variables};
   for (auto expr : compiled) {
     expr->eval(context);
@@ -268,10 +259,12 @@ double ArithmeticEvaluator::operator() (std::map<std::string, double> const &var
 }
 
 
-std::string ArithmeticEvaluator::repr() const {
+std::string Evaluator::repr() const {
   std::ostringstream str;
   for (auto expr : compiled) {
     str << expr->repr() << " ";
   }
   return str.str();
 }
+
+} // Arithmetic
