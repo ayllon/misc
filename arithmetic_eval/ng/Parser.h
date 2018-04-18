@@ -20,13 +20,13 @@ public:
   virtual  ~FunctionFactory() = default;
   virtual std::string getName() const = 0;
   virtual size_t nArgs() const = 0;
-  virtual std::shared_ptr<Node> instantiate(std::vector<std::shared_ptr<Node>> &stack) const = 0;
+  virtual std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const = 0;
 };
 
 class Parser {
 public:
   Parser();
-  void registerFunctions(std::initializer_list<std::shared_ptr<FunctionFactory>> &funs);
+  void registerFunction(const std::shared_ptr<FunctionFactory> &f);
   std::shared_ptr<Node> parse(const std::string &expr) const;
 
 private:

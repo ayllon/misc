@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/test/unit_test.hpp>
+#include <cmath>
 #include "ArithmeticEval/Evaluator.h"
 #include "ArithmeticEval/Functions.h"
 
@@ -77,12 +78,47 @@ BOOST_AUTO_TEST_CASE(BuiltInFunctions) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+class SqrtNode: public Arithmetic2::Node {
+public:
+  SqrtNode(const std::shared_ptr<Node> &a): m_a(a) {
+  }
+
+  std::string repr() const override {
+    return "sqrt(" + m_a->repr() + ")";
+  }
+
+  double value() const override {
+    return ::sqrt(m_a->value());
+  }
+
+private:
+  std::shared_ptr<Node> m_a;
+};
+
+class SqrtFactory: public Arithmetic2::FunctionFactory {
+public:
+  std::string getName() const override {
+    return "sqrt";
+  }
+
+  size_t nArgs() const override {
+    return 1;
+  }
+
+  std::shared_ptr<Arithmetic2::Node> instantiate(const std::vector<std::shared_ptr<Arithmetic2::Node>> &args) const override {
+    return std::make_shared<SqrtNode>(args[0]);
+  }
+};
 
 int main() {
   try {
     Arithmetic2::Parser parser;
+    parser.registerFunction(std::make_shared<SqrtFactory>());
     auto expr = parser.parse("5 + 6 * (2 + 1)");
 
+    std::cout << expr->repr() << std::endl;
+
+    expr = parser.parse("sqrt(5, 3) + 6 - 3");
     std::cout << expr->repr() << std::endl;
   }
   catch (std::exception const &e) {

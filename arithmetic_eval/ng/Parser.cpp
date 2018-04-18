@@ -3,6 +3,7 @@
 #include "../ArithmeticEval/Evaluator.h"
 #include <boost/tokenizer.hpp>
 #include <functional>
+#include <cmath>
 
 
 namespace Arithmetic2 {
@@ -14,7 +15,7 @@ class Operator: public Node {
 public:
   typedef std::function<double(double, double)> Functor;
 
-  Operator(const std::string &repr, Functor f, std::shared_ptr<Node> &a, std::shared_ptr<Node> &b):
+  Operator(const std::string &repr, Functor f, const std::shared_ptr<Node> &a, const std::shared_ptr<Node> &b):
       m_repr(repr), m_f(f), m_a(a), m_b(b) {
   }
 
@@ -60,10 +61,9 @@ public:
     return m_leftAssociative;
   }
 
-  std::shared_ptr<Node> instantiate(std::vector<std::shared_ptr<Node>> &stack) const override {
-    auto b = stack.back(); stack.pop_back();
-    auto a = stack.back(); stack.pop_back();
-    return std::make_shared<Operator>(m_repr, m_f, a, b);
+  std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const override {
+    assert(args.size() == 2);
+    return std::make_shared<Operator>(m_repr, m_f, args[0], args[1]);
   }
 
 private:
@@ -78,8 +78,19 @@ static std::map<std::string, std::shared_ptr<OperatorFactory>> knownOperators = 
     {"(", nullptr},
     {")", nullptr},
     {",", nullptr},
-    {"+", std::make_shared<BinaryOperatorFactory>(std::plus<double>(), 4, true, "+")},
-    {"*", std::make_shared<BinaryOperatorFactory>(std::plus<double>(), 3, true, "*")},
+    {"*",  std::make_shared<BinaryOperatorFactory>(std::multiplies<double>(), 3, true, "*")},
+    {"/",  std::make_shared<BinaryOperatorFactory>(std::divides<double>(), 3, true, "*")},
+    {"%",  std::make_shared<BinaryOperatorFactory>(::fmod, 3, true, "%")},
+    {"+",  std::make_shared<BinaryOperatorFactory>(std::plus<double>(), 4, true, "+")},
+    {"-",  std::make_shared<BinaryOperatorFactory>(std::minus<double>(), 4, true, "-")},
+    {"<",  std::make_shared<BinaryOperatorFactory>(std::less<double>(), 6, true, "<")},
+    {">",  std::make_shared<BinaryOperatorFactory>(std::greater<double>(), 6, true, ">")},
+    {"<=", std::make_shared<BinaryOperatorFactory>(std::less_equal<double>(), 6, true, "<=")},
+    {">=", std::make_shared<BinaryOperatorFactory>(std::greater_equal<double>(), 6, true, ">=")},
+    {"==", std::make_shared<BinaryOperatorFactory>(std::equal_to<double>(), 7, true, "==")},
+    {"!=", std::make_shared<BinaryOperatorFactory>(std::not_equal_to<double>(), 7, true, "!=")},
+    {"&&", std::make_shared<BinaryOperatorFactory>(std::logical_and<double>(), 11, true, "&&")},
+    {"||", std::make_shared<BinaryOperatorFactory>(std::logical_or<double>(), 12, true, "||")},
 };
 
 class Constant: public Node {
@@ -120,10 +131,20 @@ Parser::Parser() {
 }
 
 
-void Parser::registerFunctions(std::initializer_list<std::shared_ptr<FunctionFactory>> &funs) {
-  for (auto f : funs) {
-    m_functions[f->getName()] = f;
+void Parser::registerFunction(const std::shared_ptr<FunctionFactory> &f) {
+  m_functions[f->getName()] = f;
+}
+
+
+static void instantiateNode(const std::shared_ptr<FunctionFactory> &factory, std::vector<std::shared_ptr<Node>> &compiled) {
+  if (factory->nArgs() > compiled.size()) {
+    throw Error("Not enough parameters");
   }
+
+  std::vector<std::shared_ptr<Node>> args(compiled.rbegin(), compiled.rbegin() + factory->nArgs());
+  std::reverse(args.begin(), args.end());
+  compiled.resize(compiled.size() - factory->nArgs());
+  compiled.push_back(factory->instantiate(args));
 }
 
 
@@ -140,16 +161,12 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
       if (op_i->first == "(") {
         operators.push_back(*op_i);
       }
-        // Close parenthesis and commas
+      // Close parenthesis and commas
       else if (op_i->first == ")" || op_i->first == ",") {
         while (!operators.empty() && operators.back().first != "(") {
           auto operator_factory = operators.back().second;
           operators.pop_back();
-
-          if (compiled.size() < operator_factory->nArgs()) {
-            throw Error("Not enough arguments for " + operator_factory->getName());
-          }
-          compiled.push_back(operator_factory->instantiate(compiled));
+          instantiateNode(operator_factory, compiled);
         }
         if (operators.empty()) {
           throw Error("Missing opening parenthesis");
@@ -158,7 +175,7 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
           operators.pop_back();
         }
       }
-        // Rest
+      // Rest
       else {
         while (!operators.empty()) {
           // If last_op is null, then it is a function
@@ -173,16 +190,16 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
           auto operator_factory = operators.back().second;
           operators.pop_back();
 
-          compiled.push_back(operator_factory->instantiate(compiled));
+          instantiateNode(operator_factory, compiled);
         }
         operators.emplace_back(op_i->first, op_i->second);
       }
     }
-      // Number
+    // Number
     else if (std::isdigit(token[0])) {
       compiled.emplace_back(new Constant{std::stod(token)});
     }
-      // Identifier
+    // Identifier
     else if (std::isalpha(token[0])) {
       auto fun_i = m_functions.find(token);
       if (fun_i == m_functions.end()) {
@@ -201,7 +218,7 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
     if (i->first == "(") {
       throw Error("Missing closing parenthesis");
     }
-    compiled.emplace_back(i->second->instantiate(compiled));
+    instantiateNode(i->second, compiled);
   }
 
   if (compiled.size() != 1) {
