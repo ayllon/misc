@@ -8,12 +8,23 @@
 
 namespace Arithmetic2 {
 
+class Node;
+
+class Visitor {
+public:
+  virtual void enter(const Node *node) = 0;
+  virtual void exit(const Node *node) = 0;
+};
+
+
 class Node {
 public:
   virtual ~Node() = default;
   virtual std::string repr() const = 0;
+  virtual void visit(Visitor *visitor) const = 0;
   virtual double value() const = 0;
 };
+
 
 class FunctionFactory {
 public:

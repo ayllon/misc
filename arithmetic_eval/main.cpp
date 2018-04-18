@@ -84,7 +84,13 @@ public:
   }
 
   std::string repr() const override {
-    return "sqrt(" + m_a->repr() + ")";
+    return "sqrt";
+  }
+
+  void visit(Arithmetic2::Visitor *visitor) const override {
+    visitor->enter(this);
+    m_a->visit(visitor);
+    visitor->exit(this);
   }
 
   double value() const override {
@@ -110,16 +116,44 @@ public:
   }
 };
 
+class Graph: public Arithmetic2::Visitor {
+public:
+  Graph() {
+    m_os << "digraph G {" << std::endl;
+  }
+
+  void enter(const Arithmetic2::Node *node) override {
+    m_os << '\t';
+    if (!stack.empty()) {
+      m_os << '"' << stack.back()->repr() << '"' << " -> ";
+    }
+    m_os << '"' << node->repr() << '"' << std::endl;
+    stack.push_back(node);
+  }
+
+  void exit(const Arithmetic2::Node *node) override {
+    stack.pop_back();
+  }
+
+  std::string str(void) const {
+    return m_os.str() + "}";
+  }
+
+private:
+  std::ostringstream m_os;
+  std::vector<const Arithmetic2::Node*> stack;
+};
+
 int main() {
   try {
     Arithmetic2::Parser parser;
     parser.registerFunction(std::make_shared<SqrtFactory>());
     auto expr = parser.parse("5 + 6 * (2 + 1)");
 
-    std::cout << expr->repr() << std::endl;
-
-    expr = parser.parse("sqrt(5, 3) + 6 - 3");
-    std::cout << expr->repr() << std::endl;
+    expr = parser.parse("sqrt(5 * 3) + 6 - 3");
+    Graph graph;
+    expr->visit(&graph);
+    std::cout << graph.str() << std::endl;
   }
   catch (std::exception const &e) {
     std::cout << e.what() << std::endl;

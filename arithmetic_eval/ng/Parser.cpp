@@ -20,7 +20,14 @@ public:
   }
 
   std::string repr() const override {
-    return "(" + m_a->repr() + " " + m_repr + " " + m_b->repr() + ")";
+    return m_repr;
+  }
+
+  void visit(Visitor *visitor) const override {
+    visitor->enter(this);
+    m_a->visit(visitor);
+    m_b->visit(visitor);
+    visitor->exit(this);
   }
 
   double value() const override {
@@ -102,6 +109,11 @@ public:
     return std::to_string(m_val);
   }
 
+  void visit(Visitor *visitor) const override {
+    visitor->enter(this);
+    visitor->exit(this);
+  }
+
   double value() const override {
     return m_val;
   }
@@ -117,6 +129,11 @@ public:
 
   std::string repr() const override {
     return m_name;
+  }
+
+  void visit(Visitor *visitor) const override {
+    visitor->enter(this);
+    visitor->exit(this);
   }
 
   double value() const override {
