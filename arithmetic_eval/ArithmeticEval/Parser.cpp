@@ -1,15 +1,12 @@
 #include "Parser.h"
-#include "../ArithmeticEval/Separator.h"
-#include "../ArithmeticEval/Evaluator.h"
+#include "Separator.h"
+#include "Exception.h"
 #include <boost/tokenizer.hpp>
 #include <functional>
 #include <cmath>
 
 
-namespace Arithmetic2 {
-
-using Arithmetic::ArithmeticSeparator;
-using Arithmetic::Error;
+namespace Arithmetic {
 
 class Operator: public Node {
 public:
@@ -155,7 +152,7 @@ void Parser::registerFunction(const std::shared_ptr<FunctionFactory> &f) {
 
 static void instantiateNode(const std::shared_ptr<FunctionFactory> &factory, std::vector<std::shared_ptr<Node>> &compiled) {
   if (factory->nArgs() > compiled.size()) {
-    throw Error("Not enough parameters");
+    throw Exception("Not enough parameters");
   }
 
   std::vector<std::shared_ptr<Node>> args(compiled.rbegin(), compiled.rbegin() + factory->nArgs());
@@ -186,7 +183,7 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
           instantiateNode(operator_factory, compiled);
         }
         if (operators.empty()) {
-          throw Error("Missing opening parenthesis");
+          throw Exception("Missing opening parenthesis");
         }
         if (op_i->first == ")") {
           operators.pop_back();
@@ -227,19 +224,19 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
     }
       // Unknown!
     else {
-      throw Error("Unknown token '" + token + "'");
+      throw Exception("Unknown token '" + token + "'");
     }
   }
 
   for (auto i = operators.rbegin(); i != operators.rend(); ++i) {
     if (i->first == "(") {
-      throw Error("Missing closing parenthesis");
+      throw Exception("Missing closing parenthesis");
     }
     instantiateNode(i->second, compiled);
   }
 
   if (compiled.size() != 1) {
-    throw Error("Malformed expression");
+    throw Exception("Malformed expression");
   }
 
   return compiled.back();

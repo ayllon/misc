@@ -6,7 +6,7 @@
 #include <vector>
 #include <boost/variant.hpp>
 
-namespace Arithmetic2 {
+namespace Arithmetic {
 
 class Node;
 

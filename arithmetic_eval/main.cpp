@@ -1,84 +1,12 @@
 #include <iostream>
-#include <boost/test/unit_test.hpp>
 #include <cmath>
-#include "ArithmeticEval/Evaluator.h"
-#include "ArithmeticEval/Functions.h"
-
-#include "ng/Parser.h"
+#include <sstream>
+#include "ArithmeticEval/Parser.h"
 
 using namespace Arithmetic;
 
-struct VarFixture {
-  std::map<std::string, double> variables{
-      {"ID", 42},
-      {"a", 10},
-      {"b", 20},
-      {"pi", 3.14}
-  };
-  std::map<std::string, std::shared_ptr<Expression>> functions = AllFunctions();
-};
 
-BOOST_FIXTURE_TEST_SUITE(arithmetic, VarFixture)
-
-BOOST_AUTO_TEST_CASE(EvalConstant) {
-  Evaluator evaluator("5");
-  BOOST_CHECK_EQUAL(evaluator(), 5);
-}
-
-BOOST_AUTO_TEST_CASE(EvalId) {
-  Evaluator evaluator("ID");
-  BOOST_CHECK_THROW(evaluator(), Error);
-  BOOST_CHECK_THROW(evaluator({{"ANOTHER", 22}}), Error);
-  BOOST_CHECK_EQUAL(evaluator(variables), 42);
-}
-
-BOOST_AUTO_TEST_CASE(SimpleExpression) {
-  Evaluator evaluator("5+2*2");
-  BOOST_CHECK_EQUAL(evaluator(), 9);
-}
-
-BOOST_AUTO_TEST_CASE(ParenthesisExpression) {
-  BOOST_CHECK_EQUAL(Evaluator("(5+2)*2")(), 14);
-  BOOST_CHECK_EQUAL(Evaluator("((5+2)*(3+4))+1")(), 50);
-}
-
-BOOST_AUTO_TEST_CASE(ParenthesisWithVariables) {
-  BOOST_CHECK_EQUAL(Evaluator("pi+a*b")(variables), 203.14);
-}
-
-BOOST_AUTO_TEST_CASE(Booleans) {
-  BOOST_CHECK_EQUAL(Evaluator("1 && 0")(), 0);
-  BOOST_CHECK_EQUAL(Evaluator("1 && 1")(), 1);
-  BOOST_CHECK_EQUAL(Evaluator("0 && 0")(), 0);
-  BOOST_CHECK_EQUAL(Evaluator("0 || 0")(), 0);
-  BOOST_CHECK_EQUAL(Evaluator("0 || 1")(), 1);
-  BOOST_CHECK_EQUAL(Evaluator("1 || 1")(), 1);
-}
-
-BOOST_AUTO_TEST_CASE(Comparison) {
-  BOOST_CHECK_EQUAL(Evaluator("1 + 2 == 3")(), 1);
-  BOOST_CHECK_EQUAL(Evaluator("1 + 2 == 4")(), 0);
-  BOOST_CHECK_EQUAL(Evaluator("1 + 2 != 3")(), 0);
-  BOOST_CHECK_EQUAL(Evaluator("1 + 2 != 4")(), 1);
-  BOOST_CHECK_EQUAL(Evaluator("1 + 2 < 4")(), 1);
-}
-
-BOOST_AUTO_TEST_CASE(MalformedParenthesis) {
-  BOOST_CHECK_THROW(Evaluator("1 + 2)"), Error);
-  BOOST_CHECK_THROW(Evaluator(")1+2("), Error);
-  BOOST_CHECK_THROW(Evaluator("(1+2("), Error);
-}
-
-BOOST_AUTO_TEST_CASE(BuiltInFunctions) {
-  BOOST_CHECK_EQUAL(Evaluator("sqrt(4+5)", functions)(), 3);
-  BOOST_CHECK_EQUAL(Evaluator("pow(sqrt(25), 2)", functions)(), 25);
-  BOOST_CHECK_EQUAL(Evaluator("true || false", functions)(), 1.);
-  BOOST_CHECK_EQUAL(Evaluator("pow(a,2)", functions)(variables), 100);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
-class SqrtNode: public Arithmetic2::Node {
+class SqrtNode: public Node {
 public:
   SqrtNode(const std::shared_ptr<Node> &a): m_a(a) {
   }
@@ -87,7 +15,7 @@ public:
     return "sqrt";
   }
 
-  void visit(Arithmetic2::Visitor *visitor) const override {
+  void visit(Visitor *visitor) const override {
     visitor->enter(this);
     m_a->visit(visitor);
     visitor->exit(this);
@@ -101,7 +29,7 @@ private:
   std::shared_ptr<Node> m_a;
 };
 
-class SqrtFactory: public Arithmetic2::FunctionFactory {
+class SqrtFactory: public FunctionFactory {
 public:
   std::string getName() const override {
     return "sqrt";
@@ -111,18 +39,18 @@ public:
     return 1;
   }
 
-  std::shared_ptr<Arithmetic2::Node> instantiate(const std::vector<std::shared_ptr<Arithmetic2::Node>> &args) const override {
+  std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const override {
     return std::make_shared<SqrtNode>(args[0]);
   }
 };
 
-class Graph: public Arithmetic2::Visitor {
+class GraphvizGenerator: public Visitor {
 public:
-  Graph() {
+  GraphvizGenerator() {
     m_os << "digraph G {" << std::endl;
   }
 
-  void enter(const Arithmetic2::Node *node) override {
+  void enter(const Node *node) override {
     m_os << '\t';
     if (!stack.empty()) {
       m_os << '"' << stack.back()->repr() << '"' << " -> ";
@@ -131,7 +59,7 @@ public:
     stack.push_back(node);
   }
 
-  void exit(const Arithmetic2::Node *node) override {
+  void exit(const Node *node) override {
     stack.pop_back();
   }
 
@@ -141,22 +69,25 @@ public:
 
 private:
   std::ostringstream m_os;
-  std::vector<const Arithmetic2::Node*> stack;
+  std::vector<const Node*> stack;
 };
 
 int main() {
   try {
-    Arithmetic2::Parser parser;
-    parser.registerFunction(std::make_shared<SqrtFactory>());
-    auto expr = parser.parse("5 + 6 * (2 + 1)");
+    std::string raw;
+    std::cin >> raw;
 
-    expr = parser.parse("sqrt(5 * 3) + 6 - 3");
-    Graph graph;
+    Parser parser;
+    parser.registerFunction(std::make_shared<SqrtFactory>());
+
+    auto expr = parser.parse(raw);
+
+    GraphvizGenerator graph;
     expr->visit(&graph);
     std::cout << graph.str() << std::endl;
   }
   catch (std::exception const &e) {
-    std::cout << e.what() << std::endl;
+    std::cerr << e.what() << std::endl;
   }
 
   return 0;
