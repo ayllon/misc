@@ -152,6 +152,9 @@ static void instantiateNode(const std::shared_ptr<FunctionFactory> &factory, std
   if (factory->nArgs() > compiled.size()) {
     throw Exception("Not enough parameters");
   }
+  else if (factory->nArgs() < compiled.size()) {
+    throw Exception("Too many parameters");
+  }
 
   std::vector<std::shared_ptr<Node>> args(compiled.rbegin(), compiled.rbegin() + factory->nArgs());
   std::reverse(args.begin(), args.end());
