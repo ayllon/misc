@@ -3,6 +3,8 @@
 #include "ArithmeticEval/Evaluator.h"
 #include "ArithmeticEval/Functions.h"
 
+#include "ng/Parser.h"
+
 using namespace Arithmetic;
 
 struct VarFixture {
@@ -74,3 +76,18 @@ BOOST_AUTO_TEST_CASE(BuiltInFunctions) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+int main() {
+  try {
+    Arithmetic2::Parser parser;
+    auto expr = parser.parse("5 + 6 * (2 + 1)");
+
+    std::cout << expr->repr() << std::endl;
+  }
+  catch (std::exception const &e) {
+    std::cout << e.what() << std::endl;
+  }
+
+  return 0;
+}
