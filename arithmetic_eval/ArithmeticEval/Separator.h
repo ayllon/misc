@@ -28,9 +28,9 @@ struct ArithmeticSeparator {
     }
 
     // Numbers and names
-    if (std::isalnum(*next)) {
+    if (std::isalnum(*next) || *next == '_') {
       auto begin = next;
-      while (next != end && std::isalnum(*next)) {
+      while (next != end && (std::isalnum(*next) || *next == '_')) {
         ++next;
       }
       tok.assign(begin, next);

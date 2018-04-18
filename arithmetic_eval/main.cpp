@@ -82,7 +82,8 @@ private:
 int main() {
   try {
     std::string raw;
-    std::cin >> raw;
+    std::getline(std::cin, raw);
+    //std::cin >> raw;
 
     Parser parser;
     parser.registerFunction(SqrtFunctionFactory);

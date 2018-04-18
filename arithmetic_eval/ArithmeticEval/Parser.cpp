@@ -83,7 +83,7 @@ static std::map<std::string, std::shared_ptr<OperatorFactory>> knownOperators = 
     {")", nullptr},
     {",", nullptr},
     {"*",  std::make_shared<BinaryOperatorFactory>(std::multiplies<double>(), 3, true, "*")},
-    {"/",  std::make_shared<BinaryOperatorFactory>(std::divides<double>(), 3, true, "*")},
+    {"/",  std::make_shared<BinaryOperatorFactory>(std::divides<double>(), 3, true, "/")},
     {"%",  std::make_shared<BinaryOperatorFactory>(::fmod, 3, true, "%")},
     {"+",  std::make_shared<BinaryOperatorFactory>(std::plus<double>(), 4, true, "+")},
     {"-",  std::make_shared<BinaryOperatorFactory>(std::minus<double>(), 4, true, "-")},
