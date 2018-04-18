@@ -14,6 +14,7 @@ class Visitor {
 public:
   virtual void enter(const Node *node) = 0;
   virtual void exit(const Node *node) = 0;
+  virtual void leaf(const Node *node) = 0;
 };
 
 

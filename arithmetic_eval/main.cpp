@@ -1,7 +1,8 @@
 #include <iostream>
-#include <cmath>
 #include <sstream>
+#include <functional>
 #include "ArithmeticEval/Parser.h"
+#include "ArithmeticEval/BuiltinFunctions.h"
 
 using namespace Arithmetic;
 
@@ -46,21 +47,27 @@ public:
 
 class GraphvizGenerator: public Visitor {
 public:
-  GraphvizGenerator() {
-    m_os << "digraph G {" << std::endl;
+  GraphvizGenerator(const std::string &label) {
+    m_os << "digraph G {" << std::endl << "\tlabel=\"" << label << "\"" << std::endl;
   }
 
   void enter(const Node *node) override {
-    m_os << '\t';
+    m_os << "\t" << '"' << node << '"'<< " [label=\"" << node->repr() << "\"];" << std::endl;
     if (!stack.empty()) {
-      m_os << '"' << stack.back()->repr() << '"' << " -> ";
+      m_os << "\t\"" << stack.back() << '"' << " -> \"" << node << "\"" << std::endl;
     }
-    m_os << '"' << node->repr() << '"' << std::endl;
     stack.push_back(node);
   }
 
   void exit(const Node *node) override {
     stack.pop_back();
+  }
+
+  void leaf(const Node *node) override {
+    m_os << "\t" << '"' << node << '"'<< " [label=\"" << node->repr() << "\"];" << std::endl;
+    if (!stack.empty()) {
+      m_os << "\t\"" << stack.back() << '"' << " -> \"" << node << "\"" << std::endl;
+    }
   }
 
   std::string str(void) const {
@@ -78,11 +85,13 @@ int main() {
     std::cin >> raw;
 
     Parser parser;
-    parser.registerFunction(std::make_shared<SqrtFactory>());
+    parser.registerFunction(SqrtFunctionFactory);
+    parser.registerFunction(LnFunctionFactory);
+    parser.registerFunction(PowFunctionFactory);
 
     auto expr = parser.parse(raw);
 
-    GraphvizGenerator graph;
+    GraphvizGenerator graph(raw);
     expr->visit(&graph);
     std::cout << graph.str() << std::endl;
   }

@@ -107,8 +107,7 @@ public:
   }
 
   void visit(Visitor *visitor) const override {
-    visitor->enter(this);
-    visitor->exit(this);
+    visitor->leaf(this);
   }
 
   double value() const override {
@@ -129,8 +128,7 @@ public:
   }
 
   void visit(Visitor *visitor) const override {
-    visitor->enter(this);
-    visitor->exit(this);
+    visitor->leaf(this);
   }
 
   double value() const override {
