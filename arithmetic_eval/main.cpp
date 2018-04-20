@@ -1,11 +1,17 @@
+#include <cmath>
 #include <iostream>
 #include <sstream>
 #include <functional>
 #include "ArithmeticEval/Parser.h"
-#include "ArithmeticEval/BuiltinFunctions.h"
 
 using namespace Arithmetic;
 
+class TestFunctor {
+public:
+  double operator() (double x, double y, double z) {
+    return x + y * 2 + z * 3;
+  }
+};
 
 class GraphvizGenerator: public Visitor {
 public:
@@ -48,9 +54,12 @@ int main() {
     //std::cin >> raw;
 
     Parser parser;
-    parser.registerFunction(SqrtFunctionFactory);
-    parser.registerFunction(LnFunctionFactory);
-    parser.registerFunction(PowFunctionFactory);
+
+    parser.addFunction("sqrt", std::function<decltype(::sqrt)>{::sqrt});
+    parser.addFunction("ln", std::function<decltype(::log)>{::log});
+    parser.addFunction("pow", std::function<decltype(::pow)>{::pow});
+    parser.addFunction("test", std::function<double(double,double,double)>(TestFunctor()));
+    parser.addFunction("lambda", std::function<double(double)>([](double y)->double{return y-1;}));
 
     auto expr = parser.parse(raw);
 

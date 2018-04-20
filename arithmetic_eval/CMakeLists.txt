@@ -10,8 +10,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_library(arithmetic_eval SHARED
     ArithmeticEval/Parser.cpp
     ArithmeticEval/Exception.cpp
-    ArithmeticEval/BuiltinFunctions.cpp
-)
+        )
 target_link_libraries(arithmetic_eval
     ${Boost_LIBRARIES}
 )

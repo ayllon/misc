@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
+#include <cmath>
 #include "ArithmeticEval/Exception.h"
 #include "ArithmeticEval/Parser.h"
-#include "ArithmeticEval/BuiltinFunctions.h"
 
 using namespace Arithmetic;
 
@@ -15,11 +15,11 @@ struct VarFixture {
   Parser parser;
 
   VarFixture() {
-    parser.registerFunction(SqrtFunctionFactory);
-    parser.registerFunction(LnFunctionFactory);
-    parser.registerFunction(PowFunctionFactory);
-    parser.registerFunction(TrueFunctionFactory);
-    parser.registerFunction(FalseFunctionFactory);
+    parser.addFunction("sqrt", std::function<decltype(::sqrt)>{::sqrt});
+    parser.addFunction("ln", std::function<decltype(::log)>{::log});
+    parser.addFunction("pow", std::function<decltype(::pow)>{::pow});
+    parser.addConstant("true", 1.);
+    parser.addConstant("false", 0.);
   }
 };
 

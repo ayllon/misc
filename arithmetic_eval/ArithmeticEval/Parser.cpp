@@ -53,10 +53,6 @@ public:
     return 2;
   }
 
-  std::string getName() const override {
-    return m_repr;
-  }
-
   unsigned getPrecedence() const override {
     return m_precedence;
   }
@@ -144,11 +140,6 @@ private:
 };
 
 Parser::Parser() {
-}
-
-
-void Parser::registerFunction(const std::shared_ptr<FunctionFactory> &f) {
-  m_functions[f->getName()] = f;
 }
 
 
