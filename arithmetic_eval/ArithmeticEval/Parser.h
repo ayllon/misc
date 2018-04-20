@@ -42,6 +42,15 @@ public:
     addFunction(name, std::function<Func>(f));
   }
 
+  /// Register a functor into the parser
+  /// @param name The name used to call the function on an expression
+  /// @param f    The function
+  /// @note  For lambda/functor, TBase gives the signature of the function
+  template <typename TBase, typename TFunctor>
+  void addFunction(const std::string &name, const TFunctor &f) {
+    addFunction(name, std::function<TBase>(f));
+  }
+
   /// Convenience method to register a constant (a function with no parameters)
   /// @param name The name used to call the function on an expression
   /// @param val  The value of the constant
