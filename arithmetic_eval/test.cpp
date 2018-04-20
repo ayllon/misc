@@ -86,4 +86,13 @@ BOOST_AUTO_TEST_CASE(DecimalDelimiter) {
   BOOST_CHECK_EQUAL(parser.parse("0.4+1.1")->value(), 1.5);
 }
 
+BOOST_AUTO_TEST_CASE(HexadecimalNumbers) {
+  BOOST_CHECK_EQUAL(parser.parse("0xA")->value(), 10);
+}
+
+BOOST_AUTO_TEST_CASE(InvalidNumbers) {
+  BOOST_CHECK_THROW(parser.parse("123abc")->value(), Exception);
+  BOOST_CHECK_THROW(parser.parse("0xabcyd")->value(), Exception);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

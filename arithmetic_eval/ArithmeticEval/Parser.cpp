@@ -205,7 +205,11 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
     }
     // Number
     else if (std::isdigit(token[0])) {
-      compiled.emplace_back(new Constant{std::stod(token)});
+      size_t idx = 0;
+      compiled.emplace_back(new Constant{std::stod(token, &idx)});
+      if (idx != token.size()) {
+        throw Exception("Invalid number: "  + token);
+      }
     }
     // Identifier
     else if (std::isalpha(token[0])) {

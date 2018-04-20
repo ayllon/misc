@@ -30,7 +30,7 @@ struct ArithmeticSeparator {
     // Numbers
     if (std::isdigit(*next)) {
       auto begin = next;
-      while (next != end && (std::isxdigit(*next) || *next == '.')) {
+      while (next != end && (std::isxdigit(*next) || *next == '.' || *next == 'x')) {
         ++next;
       }
       tok.assign(begin, next);
