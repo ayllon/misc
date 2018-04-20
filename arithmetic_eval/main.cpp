@@ -7,44 +7,6 @@
 using namespace Arithmetic;
 
 
-class SqrtNode: public Node {
-public:
-  SqrtNode(const std::shared_ptr<Node> &a): m_a(a) {
-  }
-
-  std::string repr() const override {
-    return "sqrt";
-  }
-
-  void visit(Visitor *visitor) const override {
-    visitor->enter(this);
-    m_a->visit(visitor);
-    visitor->exit(this);
-  }
-
-  double value() const override {
-    return ::sqrt(m_a->value());
-  }
-
-private:
-  std::shared_ptr<Node> m_a;
-};
-
-class SqrtFactory: public FunctionFactory {
-public:
-  std::string getName() const override {
-    return "sqrt";
-  }
-
-  size_t nArgs() const override {
-    return 1;
-  }
-
-  std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const override {
-    return std::make_shared<SqrtNode>(args[0]);
-  }
-};
-
 class GraphvizGenerator: public Visitor {
 public:
   GraphvizGenerator(const std::string &label) {
