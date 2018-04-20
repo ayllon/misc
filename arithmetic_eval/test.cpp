@@ -15,9 +15,9 @@ struct VarFixture {
   Parser parser;
 
   VarFixture() {
-    parser.addFunction("sqrt", std::function<decltype(::sqrt)>{::sqrt});
-    parser.addFunction("ln", std::function<decltype(::log)>{::log});
-    parser.addFunction("pow", std::function<decltype(::pow)>{::pow});
+    parser.addFunction("sqrt", ::sqrt);
+    parser.addFunction("ln", ::log);
+    parser.addFunction("pow", ::pow);
     parser.addConstant("true", 1.);
     parser.addConstant("false", 0.);
   }

@@ -9,11 +9,6 @@ namespace Arithmetic {
 struct ArithmeticSeparator {
   void reset() {}
 
-  template<typename Iterator>
-  Iterator findEndOfOperator(Iterator start, Iterator end) {
-    return start + 1;
-  }
-
   template<typename InputIterator, typename Token>
   bool operator()(InputIterator &next, InputIterator end, Token &tok) {
     tok.clear();

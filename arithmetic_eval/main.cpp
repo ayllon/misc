@@ -55,11 +55,12 @@ int main() {
 
     Parser parser;
 
-    parser.addFunction("sqrt", std::function<decltype(::sqrt)>{::sqrt});
-    parser.addFunction("ln", std::function<decltype(::log)>{::log});
-    parser.addFunction("pow", std::function<decltype(::pow)>{::pow});
+    parser.addFunction("sqrt", ::sqrt);
+    parser.addFunction("ln", ::log);
+    parser.addFunction("pow", ::pow);
     parser.addFunction("test", std::function<double(double,double,double)>(TestFunctor()));
     parser.addFunction("lambda", std::function<double(double)>([](double y)->double{return y-1;}));
+    parser.addFunction("true", std::function<double()>([]()->double{return 1.;}));
 
     auto expr = parser.parse(raw);
 
