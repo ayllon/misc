@@ -81,4 +81,9 @@ BOOST_AUTO_TEST_CASE(BuiltInFunctions) {
   BOOST_CHECK_EQUAL(parser.parse("pow(a,2)")->value(variables), 100);
 }
 
+BOOST_AUTO_TEST_CASE(DecimalDelimiter) {
+  BOOST_CHECK_EQUAL(parser.parse("1.4")->value(), 1.4);
+  BOOST_CHECK_EQUAL(parser.parse("0.4+1.1")->value(), 1.5);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

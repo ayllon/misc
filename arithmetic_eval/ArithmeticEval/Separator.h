@@ -27,20 +27,28 @@ struct ArithmeticSeparator {
       return false;
     }
 
-    // Numbers and names
-    if (std::isalnum(*next) || *next == '_') {
+    // Numbers
+    if (std::isdigit(*next)) {
+      auto begin = next;
+      while (next != end && (std::isxdigit(*next) || *next == '.')) {
+        ++next;
+      }
+      tok.assign(begin, next);
+    }
+    // Identifiers
+    else if (std::isalpha(*next) || *next == '_') {
       auto begin = next;
       while (next != end && (std::isalnum(*next) || *next == '_')) {
         ++next;
       }
       tok.assign(begin, next);
     }
-      // Parenthesis are individual
+    // Parenthesis are individual
     else if (*next == '(' || *next == ')') {
       tok.assign(next, next + 1);
       ++next;
     }
-      // Just bind together operator characters, except parenthesis
+    // Just bind together operator characters, except parenthesis
     else {
       auto begin = next;
       while (next != end && !(std::isalnum(*next) || std::isspace(*next) || *next == '(' || *next == ')')) {
