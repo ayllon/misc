@@ -27,8 +27,8 @@ public:
     visitor->exit(this);
   }
 
-  double value() const override {
-    return m_f(m_a->value(), m_b->value());
+  double value(const Context &ctx) const override {
+    return m_f(m_a->value(ctx), m_b->value(ctx));
   }
 
 private:
@@ -110,7 +110,7 @@ public:
     visitor->leaf(this);
   }
 
-  double value() const override {
+  double value(const Context&) const override {
     return m_val;
   }
 
@@ -131,8 +131,12 @@ public:
     visitor->leaf(this);
   }
 
-  double value() const override {
-    return 0.;
+  double value(const Context &ctx) const override {
+    auto var_i = ctx.find(m_name);
+    if (var_i == ctx.end()) {
+      throw Exception("Variable not found: " + m_name);
+    }
+    return var_i->second;
   }
 
 private:
@@ -151,9 +155,6 @@ void Parser::registerFunction(const std::shared_ptr<FunctionFactory> &f) {
 static void instantiateNode(const std::shared_ptr<FunctionFactory> &factory, std::vector<std::shared_ptr<Node>> &compiled) {
   if (factory->nArgs() > compiled.size()) {
     throw Exception("Not enough parameters");
-  }
-  else if (factory->nArgs() < compiled.size()) {
-    throw Exception("Too many parameters");
   }
 
   std::vector<std::shared_ptr<Node>> args(compiled.rbegin(), compiled.rbegin() + factory->nArgs());

@@ -17,13 +17,14 @@ public:
   virtual void leaf(const Node *node) = 0;
 };
 
+typedef std::map<std::string, double> Context;
 
 class Node {
 public:
   virtual ~Node() = default;
   virtual std::string repr() const = 0;
   virtual void visit(Visitor *visitor) const = 0;
-  virtual double value() const = 0;
+  virtual double value(const Context &ctx = {}) const = 0;
 };
 
 

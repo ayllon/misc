@@ -7,7 +7,8 @@
 namespace Arithmetic {
 
 extern std::shared_ptr<FunctionFactory>
-    SqrtFunctionFactory, PowFunctionFactory, LnFunctionFactory;
+    SqrtFunctionFactory, PowFunctionFactory, LnFunctionFactory,
+    TrueFunctionFactory, FalseFunctionFactory;
 
 } // namespace Arithmetic
 

@@ -26,8 +26,8 @@ public:
     visitor->exit(this);
   }
 
-  virtual R value() const override {
-    return expand_args();
+  virtual R value(const Context &ctx) const override {
+    return expand_args(ctx);
   }
 
 private:
@@ -37,17 +37,17 @@ private:
 
   template<typename... Ts>
   typename std::enable_if<sizeof...(Args) == sizeof...(Ts), R>::type
-  expand_args(Ts &&... ts) const {
+  expand_args(const Context&, Ts &&... ts) const {
     assert(sizeof...(Ts) == m_args.size());
     return m_f(std::forward<Ts>(ts)...);
   };
 
   template<typename... Ts>
   typename std::enable_if<sizeof...(Args) != sizeof...(Ts), R>::type
-  expand_args(Ts &&... ts) const {
+  expand_args(const Context &ctx, Ts &&... ts) const {
     constexpr int index = sizeof...(Args) - sizeof...(Ts) - 1;
     static_assert(index >= 0, "incompatible function parameters");
-    return expand_args(m_args[index]->value(), std::forward<Ts>(ts)...);
+    return expand_args(ctx, m_args[index]->value(ctx), std::forward<Ts>(ts)...);
   }
 };
 
@@ -60,7 +60,7 @@ class FunctionFactoryGenerator<std::function<R(Args...)>> : public FunctionFacto
 public:
   typedef std::function<R(Args...)> FuncType;
 
-  FunctionFactoryGenerator(FuncType f, const std::string &name) : m_f(f), m_name(name) {
+  FunctionFactoryGenerator(FuncType f, const std::string &name): m_f(f), m_name(name) {
   }
 
   std::string getName() const override {
@@ -82,6 +82,50 @@ private:
 
 typedef FunctionFactoryGenerator<std::function<double(double)>> UnaryFunctionFactory;
 typedef FunctionFactoryGenerator<std::function<double(double, double)>> BinaryFunctionFactory;
+
+class ConstantFunction: public Node {
+public:
+  ConstantFunction(double val, const std::string &name): m_val(val), m_name(name) {
+  }
+
+  std::string repr() const override {
+    return m_name;
+  }
+
+  void visit(Visitor *visitor) const override {
+    visitor->leaf(this);
+  }
+
+  double value(const Context &ctx) const override {
+    return m_val;
+  };
+
+private:
+  double m_val;
+  std::string m_name;
+};
+
+class ConstantFunctionFactory: public FunctionFactory {
+public:
+  ConstantFunctionFactory(double val, const std::string &name): m_val(val), m_name(name) {
+  }
+
+  std::string getName() const override {
+    return m_name;
+  }
+
+  size_t nArgs() const override {
+    return 0;
+  }
+
+  std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const override {
+    return std::make_shared<ConstantFunction>(m_val, m_name);
+  }
+
+private:
+  double m_val;
+  std::string m_name;
+};
 
 } // namespace Arithmetic
 
