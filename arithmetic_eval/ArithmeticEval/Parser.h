@@ -54,8 +54,8 @@ public:
   /// Convenience method to register a constant (a function with no parameters)
   /// @param name The name used to call the function on an expression
   /// @param val  The value of the constant
-  void addConstant(const std::string &name, double val) {
-    addFunction(name, std::function<double()>{[val]()->double{return val;}});
+  void addConstant(const std::string &name, const Value &val) {
+    addFunction(name, std::function<Value()>{[val]()->Value{return val;}});
   }
 
 private:

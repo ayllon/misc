@@ -6,10 +6,10 @@
 
 using namespace Arithmetic;
 
-class TestFunctor {
+class TestStrFunc {
 public:
-  double operator() (double x, double y, double z) {
-    return x + y * 2 + z * 3;
+  double operator() (const std::string &str) {
+    return str.size();
   }
 };
 
@@ -49,27 +49,29 @@ private:
 
 int main() {
   try {
-    std::string raw;
-    std::getline(std::cin, raw);
-    //std::cin >> raw;
+    std::string raw("sqrt(len(\"abc\"))");
+    //std::getline(std::cin, raw);
 
     Parser parser;
 
     parser.addFunction("sqrt", ::sqrt);
-    parser.addFunction("ln", ::log);
-    parser.addFunction("pow", ::pow);
-    parser.addFunction<double(double,double,double)>("test", TestFunctor());
-    parser.addFunction<double(double)>("lambda", ([](double y)->double{return y-1;}));
-    parser.addFunction<double()>("true", ([]()->double{return 1.;}));
+    parser.addFunction<double(const std::string&)>("len", TestStrFunc());
+//    parser.addFunction("ln", ::log);
+//    parser.addFunction("pow", ::pow);
+//    parser.addFunction<double(double,double,double)>("test", TestFunctor());
+//    parser.addFunction<double(double)>("lambda", ([](double y)->double{return y-1;}));
+//    parser.addFunction<double()>("true", ([]()->double{return 1.;}));
 
     auto expr = parser.parse(raw);
 
     GraphvizGenerator graph(raw);
     expr->visit(&graph);
     std::cout << graph.str() << std::endl;
+
+    std::cerr << expr->value() << std::endl;
   }
   catch (std::exception const &e) {
-    std::cerr << e.what() << std::endl;
+    std::cerr << "Error! " << e.what() << std::endl;
   }
 
   return 0;

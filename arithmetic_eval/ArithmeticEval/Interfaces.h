@@ -5,11 +5,12 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "Value.h"
 
 namespace Arithmetic {
 
 /// A context is a map of variable names with an associated value
-typedef std::map<std::string, double> Context;
+typedef std::map<std::string, Value> Context;
 
 // Forward declaration
 class Node;
@@ -45,7 +46,7 @@ public:
 
   /// Evaluate the tree starting at this node
   /// @param ctx  A dictionary of variable values
-  virtual double value(const Context &ctx = {}) const = 0;
+  virtual Value value(const Context &ctx = {}) const = 0;
 };
 
 /**

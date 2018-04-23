@@ -30,6 +30,15 @@ struct ArithmeticSeparator {
       }
       tok.assign(begin, next);
     }
+    // Strings
+    else if (*next == '"') {
+      auto begin = next;
+      do {
+        ++next;
+      } while (next != end && *next != '"');
+      if (next != end) ++next; // include last quote
+      tok.assign(begin, next);
+    }
     // Identifiers
     else if (std::isalpha(*next) || *next == '_') {
       auto begin = next;

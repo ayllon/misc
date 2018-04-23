@@ -2,12 +2,23 @@
 #define ARITHMETIC_EVAL_FUNCTIONFACTORY_H
 
 #include "Interfaces.h"
+#include "Exception.h"
 #include <cassert>
 #include <functional>
 #include <memory>
 #include <vector>
 
 namespace Arithmetic {
+
+template <std::size_t i, typename A0, typename... Args>
+struct ArgTypeHelper {
+  typedef typename ArgTypeHelper<i - 1, Args...>::type type;
+};
+
+template <typename A0, typename... Args>
+struct ArgTypeHelper<0, A0, Args...> {
+  typedef A0 type;
+};
 
 /**
  * @brief Template class that generates via meta-programming a class suitable to be inserted into the parsed tree
@@ -49,7 +60,7 @@ public:
 
   /// Evaluate the tree starting at this node
   /// @param ctx  A dictionary of variable values
-  virtual R value(const Context &ctx) const override {
+  virtual Value value(const Context &ctx) const override {
     // Argument expansion is done via meta-programming
     return expand_args(ctx);
   }
@@ -64,7 +75,7 @@ private:
   /// @param ts   Actual arguments. By now, all have been unrolled.
   /// @return     The value returned by the function itself
   template<typename... Ts>
-  typename std::enable_if<sizeof...(Args) == sizeof...(Ts), R>::type
+  typename std::enable_if<sizeof...(Args) == sizeof...(Ts), Value>::type
   expand_args(const Context&, Ts &&... ts) const {
     assert(sizeof...(Ts) == m_args.size());
     return m_f(std::forward<Ts>(ts)...);
@@ -75,11 +86,18 @@ private:
   /// @param ts   Actual arguments. Still arguments left to unroll.
   /// @return     The value returned by the function itself
   template<typename... Ts>
-  typename std::enable_if<sizeof...(Args) != sizeof...(Ts), R>::type
+  typename std::enable_if<sizeof...(Args) != sizeof...(Ts), Value>::type
   expand_args(const Context &ctx, Ts &&... ts) const {
     constexpr int index = sizeof...(Args) - sizeof...(Ts) - 1;
     static_assert(index >= 0, "incompatible function parameters");
-    return expand_args(ctx, m_args[index]->value(ctx), std::forward<Ts>(ts)...);
+    typedef typename ArgTypeHelper<index, Args...>::type ArgType;
+
+    try {
+      return expand_args(ctx, boost::get<ArgType>(m_args[index]->value(ctx)), std::forward<Ts>(ts)...);
+    }
+    catch (const boost::bad_get&) {
+      throw Exception("Failed to evaluate parameter " + std::to_string(index) + " for " + m_repr);
+    }
   }
 };
 

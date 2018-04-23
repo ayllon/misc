@@ -1,6 +1,7 @@
 #include "Parser.h"
 #include "Separator.h"
 #include "Exception.h"
+#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <functional>
 #include <cmath>
@@ -10,7 +11,7 @@ namespace Arithmetic {
 
 class Operator: public Node {
 public:
-  typedef std::function<double(double, double)> Functor;
+  typedef std::function<Value(Value, Value)> Functor;
 
   Operator(const std::string &repr, Functor f, const std::shared_ptr<Node> &a, const std::shared_ptr<Node> &b):
       m_repr(repr), m_f(f), m_a(a), m_b(b) {
@@ -27,7 +28,7 @@ public:
     visitor->exit(this);
   }
 
-  double value(const Context &ctx) const override {
+  Value value(const Context &ctx) const override {
     return m_f(m_a->value(ctx), m_b->value(ctx));
   }
 
@@ -78,10 +79,11 @@ static std::map<std::string, std::shared_ptr<OperatorFactory>> knownOperators = 
     {"(", nullptr},
     {")", nullptr},
     {",", nullptr},
-    {"^",  std::make_shared<BinaryOperatorFactory>(::pow, 1, true, "^")},
-    {"*",  std::make_shared<BinaryOperatorFactory>(std::multiplies<double>(), 3, true, "*")},
+//    {"^",  std::make_shared<BinaryOperatorFactory>(::pow, 1, true, "^")},
+    {"*",  std::make_shared<BinaryOperatorFactory>(multiplies(), 3, true, "*")},
+/*
     {"/",  std::make_shared<BinaryOperatorFactory>(std::divides<double>(), 3, true, "/")},
-    {"%",  std::make_shared<BinaryOperatorFactory>(::fmod, 3, true, "%")},
+//    {"%",  std::make_shared<BinaryOperatorFactory>(::fmod, 3, true, "%")},
     {"+",  std::make_shared<BinaryOperatorFactory>(std::plus<double>(), 4, true, "+")},
     {"-",  std::make_shared<BinaryOperatorFactory>(std::minus<double>(), 4, true, "-")},
     {"<",  std::make_shared<BinaryOperatorFactory>(std::less<double>(), 6, true, "<")},
@@ -92,27 +94,28 @@ static std::map<std::string, std::shared_ptr<OperatorFactory>> knownOperators = 
     {"!=", std::make_shared<BinaryOperatorFactory>(std::not_equal_to<double>(), 7, true, "!=")},
     {"&&", std::make_shared<BinaryOperatorFactory>(std::logical_and<double>(), 11, true, "&&")},
     {"||", std::make_shared<BinaryOperatorFactory>(std::logical_or<double>(), 12, true, "||")},
+     */
 };
 
 class Constant: public Node {
 public:
-  Constant(double val): m_val(val) {
+  Constant(Value val): m_val(val) {
   }
 
   std::string repr() const override {
-    return std::to_string(m_val);
+    return boost::lexical_cast<std::string>(m_val);
   }
 
   void visit(Visitor *visitor) const override {
     visitor->leaf(this);
   }
 
-  double value(const Context&) const override {
+  Value value(const Context&) const override {
     return m_val;
   }
 
 private:
-  double m_val;
+  Value m_val;
 };
 
 class Variable: public Node {
@@ -128,7 +131,7 @@ public:
     visitor->leaf(this);
   }
 
-  double value(const Context &ctx) const override {
+  Value value(const Context &ctx) const override {
     auto var_i = ctx.find(m_name);
     if (var_i == ctx.end()) {
       throw Exception("Variable not found: " + m_name);
@@ -210,6 +213,10 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
       if (idx != token.size()) {
         throw Exception("Invalid number: "  + token);
       }
+    }
+    // String
+    else if (token[0] == '"') {
+      compiled.emplace_back(new Constant(token));
     }
     // Identifier
     else if (std::isalpha(token[0])) {
