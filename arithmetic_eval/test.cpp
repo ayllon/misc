@@ -11,13 +11,23 @@ struct StrLen {
   }
 };
 
+struct StrLower {
+  std::string operator() (std::string str) {
+    std::transform(
+        str.begin(), str.end(), str.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    return str;
+  }
+};
+
 struct VarFixture {
   std::map<std::string, Value> variables{
       {"ID", 42},
       {"a", 10},
       {"b", 20},
       {"pi", 3.14},
-      {"name", "ABCDEF"}
+      {"name", "ABCDEF"},
+      {"description", "blah bleh blih"}
   };
   Parser parser;
 
@@ -28,6 +38,7 @@ struct VarFixture {
     parser.addConstant("true", 1.);
     parser.addConstant("false", 0.);
     parser.addFunction<double(const std::string&)>("len", StrLen());
+    parser.addFunction<std::string(const std::string&)>("tolower", StrLower());
   }
 };
 
@@ -107,12 +118,19 @@ BOOST_AUTO_TEST_CASE(Strings) {
   BOOST_CHECK_EQUAL(parser.parse("\"a string\"")->value<std::string>(), "a string");
   BOOST_CHECK_EQUAL(parser.parse("\"conca\" + \"tenate\"")->value<std::string>(), "concatenate");
   BOOST_CHECK_THROW(parser.parse("\"conca\" * \"tenate\"")->value<std::string>(), Exception);
+  BOOST_CHECK_THROW(parser.parse("\"conca\" + 5")->value<std::string>(), Exception);
   BOOST_CHECK_EQUAL(parser.parse("len(\"this is a string\")")->value<double>(), 16);
 }
 
 BOOST_AUTO_TEST_CASE(StringComparison) {
   BOOST_CHECK_EQUAL(parser.parse("\"abcd\" < \"efg\"")->value<double>(), 1);
   BOOST_CHECK_EQUAL(parser.parse("\"abcd\" + \"efg\" == \"abcdefg\"")->value<double>(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(StringVariables) {
+  BOOST_CHECK_EQUAL(parser.parse("name")->value<std::string>(variables), "ABCDEF");
+  BOOST_CHECK_EQUAL(parser.parse("len(description)")->value<double>(variables), 14);
+  BOOST_CHECK_EQUAL(parser.parse("tolower(name) + \" ID\"")->value<std::string>(variables), "abcdef ID");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
