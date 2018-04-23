@@ -10,6 +10,10 @@ namespace Arithmetic {
 
 typedef boost::variant<double, std::string> Value;
 
+/**
+ * The '+' operator is special, since it has to be able to add two doubles, but also
+ * concatenate two strings
+ */
 struct plus {
   Value operator() (const Value &a, const Value &b) {
     if (a.type() == typeid(double) && a.type() == b.type()) {
@@ -19,42 +23,6 @@ struct plus {
       return boost::get<std::string>(a) + boost::get<std::string>(b);
     }
     throw Exception("Can not evaluate both sides of the operator +");
-  }
-};
-
-struct less {
-  Value operator() (const Value &a, const Value &b) {
-    return a < b;
-  }
-};
-
-struct greater {
-  Value operator() (const Value &a, const Value &b) {
-    return a > b;
-  }
-};
-
-struct less_equal {
-  Value operator() (const Value &a, const Value &b) {
-    return a <= b;
-  }
-};
-
-struct greater_equal {
-  Value operator() (const Value &a, const Value &b) {
-    return a >= b;
-  }
-};
-
-struct equal_to {
-  Value operator() (const Value &a, const Value &b) {
-    return a == b;
-  }
-};
-
-struct not_equal_to {
-  Value operator() (const Value &a, const Value &b) {
-    return a != b;
   }
 };
 
