@@ -93,9 +93,9 @@ private:
     typedef typename ArgTypeHelper<index, Args...>::type ArgType;
 
     try {
-      return expand_args(ctx, boost::get<ArgType>(m_args[index]->value(ctx)), std::forward<Ts>(ts)...);
+      return expand_args(ctx, Arithmetic::get<ArgType>(m_args[index]->value(ctx)), std::forward<Ts>(ts)...);
     }
-    catch (const boost::bad_get&) {
+    catch (const std::exception&) {
       throw Exception("Failed to evaluate parameter " + std::to_string(index) + " for " + m_repr);
     }
   }

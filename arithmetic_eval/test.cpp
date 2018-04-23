@@ -26,8 +26,8 @@ struct VarFixture {
       {"a", 10},
       {"b", 20},
       {"pi", 3.14},
-      {"name", "ABCDEF"},
-      {"description", "blah bleh blih"}
+      {"name", std::string{"ABCDEF"}},
+      {"description", std::string{"blah bleh blih"}}
   };
   Parser parser;
 

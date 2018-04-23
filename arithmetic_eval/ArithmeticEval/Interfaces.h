@@ -50,7 +50,7 @@ public:
 
   template <typename T>
   T value(const Context &ctx = {}) const {
-    return boost::get<T>(value(ctx));
+    return Arithmetic::get<T>(value(ctx));
   }
 };
 

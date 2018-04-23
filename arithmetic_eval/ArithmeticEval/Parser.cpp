@@ -10,6 +10,44 @@
 namespace Arithmetic {
 
 template <typename T>
+struct is_vector {
+  static const bool value = false;
+};
+
+template <typename T>
+struct is_vector<std::vector<T>> {
+  static const bool value = true;
+};
+
+class ValueStringRepr: public boost::static_visitor<std::string> {
+public:
+  template <typename T>
+  typename std::enable_if<std::is_integral<T>::value, std::string>::type
+  operator() (T &val) const {
+    return std::to_string(val);
+  }
+
+  template <typename T>
+  typename std::enable_if<std::is_floating_point<T>::value, std::string>::type
+  operator() (T &val) const {
+    return std::to_string(val);
+  };
+
+  template<typename T>
+  typename std::enable_if<std::is_same<T, std::string>::value, std::string>::type
+  operator() (const T &val) const {
+    return val;
+  }
+
+  template<typename T>
+  typename std::enable_if<is_vector<T>::value, std::string>::type
+  operator() (const T &val) const {
+    return "["  + std::to_string(val.size()) + "...]";
+  }
+};
+
+
+template <typename T>
 class Operator: public Node {
 public:
   typedef std::function<T(T, T)> Functor;
@@ -42,7 +80,7 @@ private:
   typename std::enable_if<!std::is_same<TCast, Value>::value, Value>::type
   value_impl(const Context &ctx) const {
     try {
-      return m_f(boost::get<TCast>(m_a->value(ctx)), boost::get<TCast>(m_b->value(ctx)));
+      return m_f(Arithmetic::get<TCast>(m_a->value(ctx)), Arithmetic::get<TCast>(m_b->value(ctx)));
     }
     catch (const boost::bad_get&) {
       throw Exception("Invalid types passed to the operator " + m_repr);
@@ -120,7 +158,7 @@ public:
   }
 
   std::string repr() const override {
-    return boost::lexical_cast<std::string>(m_val);
+    return boost::apply_visitor(ValueStringRepr(), m_val);
   }
 
   void visit(Visitor *visitor) const override {

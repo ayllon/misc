@@ -8,7 +8,47 @@
 
 namespace Arithmetic {
 
-typedef boost::variant<double, std::string> Value;
+typedef boost::variant<bool,
+                      int32_t,
+                      int64_t,
+                      float,
+                      double,
+                      std::string,
+                      std::vector<bool>,
+                      std::vector<int32_t>,
+                      std::vector<int64_t>,
+                      std::vector<float>,
+                      std::vector<double>> Value;
+
+
+template <typename D>
+struct CastVisitor;
+
+template <>
+struct CastVisitor<double>: public boost::static_visitor<double> {
+
+  template <typename T>
+  typename std::enable_if<std::is_integral<T>::value || std::is_floating_point<T>::value, double>::type
+  operator() (T v) const {
+    return v;
+  }
+
+  template <typename T>
+  typename std::enable_if<!std::is_integral<T>::value && !std::is_floating_point<T>::value, double>::type
+  operator() (T v) const {
+    throw Exception("Can not convert types");
+  };
+};
+
+template <typename D>
+D get(const Value &val) {
+  return boost::get<D>(val);
+};
+
+template <>
+double get(const Value &val) {
+  return boost::apply_visitor(CastVisitor<double>(), val);
+};
 
 /**
  * The '+' operator is special, since it has to be able to add two doubles, but also
@@ -17,10 +57,10 @@ typedef boost::variant<double, std::string> Value;
 struct plus {
   Value operator() (const Value &a, const Value &b) {
     if (a.type() == typeid(double) && a.type() == b.type()) {
-      return boost::get<double>(a) + boost::get<double>(b);
+      return Arithmetic::get<double>(a) + Arithmetic::get<double>(b);
     }
     else if (a.type() == typeid(std::string) && a.type() == b.type()) {
-      return boost::get<std::string>(a) + boost::get<std::string>(b);
+      return Arithmetic::get<std::string>(a) + Arithmetic::get<std::string>(b);
     }
     throw Exception("Can not evaluate both sides of the operator +");
   }
