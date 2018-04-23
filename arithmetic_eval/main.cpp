@@ -49,18 +49,16 @@ private:
 
 int main() {
   try {
-    std::string raw("sqrt(len(\"abc\"))");
-    //std::getline(std::cin, raw);
+    std::string raw;
+    std::getline(std::cin, raw);
 
     Parser parser;
 
     parser.addFunction("sqrt", ::sqrt);
     parser.addFunction<double(const std::string&)>("len", TestStrFunc());
-//    parser.addFunction("ln", ::log);
-//    parser.addFunction("pow", ::pow);
-//    parser.addFunction<double(double,double,double)>("test", TestFunctor());
-//    parser.addFunction<double(double)>("lambda", ([](double y)->double{return y-1;}));
-//    parser.addFunction<double()>("true", ([]()->double{return 1.;}));
+    parser.addFunction("ln", ::log);
+    parser.addFunction<double(double)>("lambda", ([](double y)->double{return y-1;}));
+    parser.addFunction<double()>("true", ([]()->double{return 1.;}));
 
     auto expr = parser.parse(raw);
 

@@ -9,9 +9,10 @@
 
 namespace Arithmetic {
 
+template <typename T>
 class Operator: public Node {
 public:
-  typedef std::function<Value(Value, Value)> Functor;
+  typedef std::function<T(T, T)> Functor;
 
   Operator(const std::string &repr, Functor f, const std::shared_ptr<Node> &a, const std::shared_ptr<Node> &b):
       m_repr(repr), m_f(f), m_a(a), m_b(b) {
@@ -29,13 +30,25 @@ public:
   }
 
   Value value(const Context &ctx) const override {
-    return m_f(m_a->value(ctx), m_b->value(ctx));
+    return value_impl<T>(ctx);
   }
 
 private:
   Functor m_f;
   std::shared_ptr<Node> m_a, m_b;
   std::string m_repr;
+
+  template <typename TCast>
+  typename std::enable_if<!std::is_same<TCast, Value>::value, Value>::type
+  value_impl(const Context &ctx) const {
+    return m_f(boost::get<TCast>(m_a->value(ctx)), boost::get<TCast>(m_b->value(ctx)));
+  }
+
+  template <typename TCast>
+  typename std::enable_if<std::is_same<TCast, Value>::value, Value>::type
+  value_impl(const Context &ctx) const {
+    return m_f(m_a->value(ctx), m_b->value(ctx));
+  }
 };
 
 class OperatorFactory: public FunctionFactory {
@@ -44,9 +57,10 @@ public:
   virtual bool isLeftAssociative() const = 0;
 };
 
+template <typename T>
 class BinaryOperatorFactory: public OperatorFactory {
 public:
-  BinaryOperatorFactory(Operator::Functor f, unsigned precedence, bool leftAssociative, const std::string &repr):
+  BinaryOperatorFactory(typename Operator<T>::Functor f, unsigned precedence, bool leftAssociative, const std::string &repr):
       m_f(f), m_precedence(precedence), m_leftAssociative(leftAssociative), m_repr(repr) {
   }
 
@@ -64,11 +78,11 @@ public:
 
   std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const override {
     assert(args.size() == 2);
-    return std::make_shared<Operator>(m_repr, m_f, args[0], args[1]);
+    return std::make_shared<Operator<T>>(m_repr, m_f, args[0], args[1]);
   }
 
 private:
-  Operator::Functor m_f;
+  typename Operator<T>::Functor m_f;
   unsigned m_precedence;
   bool m_leftAssociative;
   std::string m_repr;
@@ -79,22 +93,20 @@ static std::map<std::string, std::shared_ptr<OperatorFactory>> knownOperators = 
     {"(", nullptr},
     {")", nullptr},
     {",", nullptr},
-//    {"^",  std::make_shared<BinaryOperatorFactory>(::pow, 1, true, "^")},
-    {"*",  std::make_shared<BinaryOperatorFactory>(multiplies(), 3, true, "*")},
-/*
-    {"/",  std::make_shared<BinaryOperatorFactory>(std::divides<double>(), 3, true, "/")},
-//    {"%",  std::make_shared<BinaryOperatorFactory>(::fmod, 3, true, "%")},
-    {"+",  std::make_shared<BinaryOperatorFactory>(std::plus<double>(), 4, true, "+")},
-    {"-",  std::make_shared<BinaryOperatorFactory>(std::minus<double>(), 4, true, "-")},
-    {"<",  std::make_shared<BinaryOperatorFactory>(std::less<double>(), 6, true, "<")},
-    {">",  std::make_shared<BinaryOperatorFactory>(std::greater<double>(), 6, true, ">")},
-    {"<=", std::make_shared<BinaryOperatorFactory>(std::less_equal<double>(), 6, true, "<=")},
-    {">=", std::make_shared<BinaryOperatorFactory>(std::greater_equal<double>(), 6, true, ">=")},
-    {"==", std::make_shared<BinaryOperatorFactory>(std::equal_to<double>(), 7, true, "==")},
-    {"!=", std::make_shared<BinaryOperatorFactory>(std::not_equal_to<double>(), 7, true, "!=")},
-    {"&&", std::make_shared<BinaryOperatorFactory>(std::logical_and<double>(), 11, true, "&&")},
-    {"||", std::make_shared<BinaryOperatorFactory>(std::logical_or<double>(), 12, true, "||")},
-     */
+    {"^",  std::make_shared<BinaryOperatorFactory<double>>(pow(), 1, true, "^")},
+    {"*",  std::make_shared<BinaryOperatorFactory<double>>(std::multiplies<double>(), 3, true, "*")},
+    {"/",  std::make_shared<BinaryOperatorFactory<double>>(std::divides<double>(), 3, true, "/")},
+    {"%",  std::make_shared<BinaryOperatorFactory<double>>(mod(), 3, true, "%")},
+    {"+",  std::make_shared<BinaryOperatorFactory<Value>>(plus(), 4, true, "+")},
+    {"-",  std::make_shared<BinaryOperatorFactory<double>>(std::minus<double>(), 4, true, "-")},
+    {"<",  std::make_shared<BinaryOperatorFactory<Value>>(less(), 6, true, "<")},
+    {">",  std::make_shared<BinaryOperatorFactory<Value>>(greater(), 6, true, ">")},
+    {"<=", std::make_shared<BinaryOperatorFactory<Value>>(less_equal(), 6, true, "<=")},
+    {">=", std::make_shared<BinaryOperatorFactory<Value>>(greater_equal(), 6, true, ">=")},
+    {"==", std::make_shared<BinaryOperatorFactory<Value>>(equal_to(), 7, true, "==")},
+    {"!=", std::make_shared<BinaryOperatorFactory<Value>>(not_equal_to(), 7, true, "!=")},
+    {"&&", std::make_shared<BinaryOperatorFactory<double>>(std::logical_and<double>(), 11, true, "&&")},
+    {"||", std::make_shared<BinaryOperatorFactory<double>>(std::logical_or<double>(), 12, true, "||")},
 };
 
 class Constant: public Node {
@@ -216,7 +228,7 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
     }
     // String
     else if (token[0] == '"') {
-      compiled.emplace_back(new Constant(token));
+      compiled.emplace_back(new Constant{std::string{token.begin() +1, token.end() - 1}});
     }
     // Identifier
     else if (std::isalpha(token[0])) {
