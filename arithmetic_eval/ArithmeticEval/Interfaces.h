@@ -47,6 +47,11 @@ public:
   /// Evaluate the tree starting at this node
   /// @param ctx  A dictionary of variable values
   virtual Value value(const Context &ctx = {}) const = 0;
+
+  template <typename T>
+  T value(const Context &ctx = {}) const {
+    return boost::get<T>(value(ctx));
+  }
 };
 
 /**

@@ -41,7 +41,12 @@ private:
   template <typename TCast>
   typename std::enable_if<!std::is_same<TCast, Value>::value, Value>::type
   value_impl(const Context &ctx) const {
-    return m_f(boost::get<TCast>(m_a->value(ctx)), boost::get<TCast>(m_b->value(ctx)));
+    try {
+      return m_f(boost::get<TCast>(m_a->value(ctx)), boost::get<TCast>(m_b->value(ctx)));
+    }
+    catch (const boost::bad_get&) {
+      throw Exception("Invalid types passed to the operator " + m_repr);
+    }
   }
 
   template <typename TCast>

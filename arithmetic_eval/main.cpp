@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <functional>
+#include <boost/algorithm/string/replace.hpp>
 #include "ArithmeticEval/Parser.h"
 
 using namespace Arithmetic;
@@ -16,11 +17,11 @@ public:
 class GraphvizGenerator: public Visitor {
 public:
   GraphvizGenerator(const std::string &label) {
-    m_os << "digraph G {" << std::endl << "\tlabel=\"" << label << "\"" << std::endl;
+    m_os << "digraph G {" << std::endl << "\tlabel=\"" << escape(label) << "\"" << std::endl;
   }
 
   void enter(const Node *node) override {
-    m_os << "\t" << '"' << node << '"'<< " [label=\"" << node->repr() << "\"];" << std::endl;
+    m_os << "\t" << '"' << node << '"'<< " [label=\"" << escape(node->repr()) << "\"];" << std::endl;
     if (!stack.empty()) {
       m_os << "\t\"" << stack.back() << '"' << " -> \"" << node << "\"" << std::endl;
     }
@@ -32,7 +33,7 @@ public:
   }
 
   void leaf(const Node *node) override {
-    m_os << "\t" << '"' << node << '"'<< " [label=\"" << node->repr() << "\"];" << std::endl;
+    m_os << "\t" << '"' << node << '"'<< " [label=\"" << escape(node->repr()) << "\"];" << std::endl;
     if (!stack.empty()) {
       m_os << "\t\"" << stack.back() << '"' << " -> \"" << node << "\"" << std::endl;
     }
@@ -45,6 +46,10 @@ public:
 private:
   std::ostringstream m_os;
   std::vector<const Node*> stack;
+
+  std::string escape(const std::string &str) const {
+    return boost::replace_all_copy(str, "\"", "\\\"");
+  }
 };
 
 int main() {
