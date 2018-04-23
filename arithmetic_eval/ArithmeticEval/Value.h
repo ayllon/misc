@@ -26,12 +26,18 @@ struct plus {
   }
 };
 
+/**
+ * Implementation of the power (^) operator
+ */
 struct pow {
   double operator() (double a, double b) {
     return ::pow(a, b);
   }
 };
 
+/**
+ * Implementation of the module (%) operator
+ */
 struct mod {
   double operator() (double a, double b) {
     return ::fmod(a, b);
