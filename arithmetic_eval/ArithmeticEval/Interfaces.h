@@ -15,9 +15,7 @@ typedef std::map<std::string, Value> Context;
 // Forward declaration
 class Node;
 
-/**
- * @brief Interface to be implemented by code that needs to recursively visit a parsed expression.
- */
+/// @brief Interface to be implemented by code that needs to recursively visit a parsed expression.
 class Visitor {
 public:
   /// Called when entering a non-leaf node
@@ -30,9 +28,7 @@ public:
   virtual void leaf(const Node *node) = 0;
 };
 
-/**
- * @brief A parsed expression is a tree formed by classes that implement this interface
- */
+/// @brief A parsed expression is a tree formed by classes that implement this interface
 class Node {
 public:
   /// Virtual destructor
@@ -54,9 +50,7 @@ public:
   }
 };
 
-/**
- * @brief Instantiate a function as a Node for the expression tree
- */
+/// @brief Instantiate a function as a Node for the expression tree
 class FunctionFactory {
 public:
 

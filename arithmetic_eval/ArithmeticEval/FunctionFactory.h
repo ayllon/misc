@@ -10,22 +10,22 @@
 
 namespace Arithmetic {
 
+/// Get the type of the argument with index i, recursive case
 template <std::size_t i, typename A0, typename... Args>
 struct ArgTypeHelper {
   typedef typename ArgTypeHelper<i - 1, Args...>::type type;
 };
 
+/// Get the type of the first argument, base case
 template <typename A0, typename... Args>
 struct ArgTypeHelper<0, A0, Args...> {
   typedef A0 type;
 };
 
-/**
- * @brief Template class that generates via meta-programming a class suitable to be inserted into the parsed tree
- * @tparam R    Return type
- * @tparam Args Function arguments
- * @note This is used by FunctionFactoryGenerator. It doesn't make sense to be used directly.
- */
+/// @brief Template class that generates via meta-programming a class suitable to be inserted into the parsed tree
+/// @tparam R    Return type
+/// @tparam Args Function arguments
+/// @note This is used by FunctionFactoryGenerator. It doesn't make sense to be used directly.
 template<typename R, typename ...Args>
 class FunctionNodeGenerator : public Node {
 public:
@@ -35,7 +35,6 @@ public:
   /// @param repr A string representation of the function (the name)
   /// @param f    The function to be wrapped
   /// @param args A vector with the children nodes (function arguments)
-  ///
   FunctionNodeGenerator(const std::string &repr, FuncType f, const std::vector<std::shared_ptr<Node>> &args) :
       m_repr(repr), m_f(f), m_args(args) {}
 
@@ -101,18 +100,13 @@ private:
   }
 };
 
-
-/**
- * @brief Dynamic generator of function factories.
- */
+/// @brief Dynamic generator of function factories.
 template<typename T>
 class FunctionFactoryGenerator;
 
-/**
- * @brief Dynamic generator of function factories. Specialization for a std::function.
- * @tparam R    Return type.
- * @tparam Args Argument types.
- */
+/// @brief Dynamic generator of function factories. Specialization for a std::function.
+/// @tparam R    Return type.
+/// @tparam Args Argument types.
 template<typename R, typename ...Args>
 class FunctionFactoryGenerator<std::function<R(Args...)>> : public FunctionFactory {
 public:

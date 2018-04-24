@@ -3,12 +3,12 @@
 
 namespace Arithmetic {
 
-/**
- * Implements the separation logic for boost::tokenizer
- */
+/// Implements the separation logic for boost::tokenizer
 struct ArithmeticSeparator {
+  /// reset does noting
   void reset() {}
 
+  /// get next token
   template<typename InputIterator, typename Token>
   bool operator()(InputIterator &next, InputIterator end, Token &tok) {
     tok.clear();

@@ -1,6 +1,7 @@
 #include "Parser.h"
 #include "Separator.h"
 #include "Exception.h"
+#include "Util.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <functional>
@@ -9,29 +10,15 @@
 
 namespace Arithmetic {
 
-template <typename T>
-struct is_vector {
-  static const bool value = false;
-};
 
-template <typename T>
-struct is_vector<std::vector<T>> {
-  static const bool value = true;
-};
 
 class ValueStringRepr: public boost::static_visitor<std::string> {
 public:
   template <typename T>
-  typename std::enable_if<std::is_integral<T>::value, std::string>::type
+  typename std::enable_if<is_numeric<T, true>::value, std::string>::type
   operator() (T &val) const {
     return std::to_string(val);
   }
-
-  template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, std::string>::type
-  operator() (T &val) const {
-    return std::to_string(val);
-  };
 
   template<typename T>
   typename std::enable_if<std::is_same<T, std::string>::value, std::string>::type

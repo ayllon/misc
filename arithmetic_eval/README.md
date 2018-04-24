@@ -20,4 +20,7 @@ parser.addFunction<double(const std::string&)>("len", Len());
 parser.addFunction<double(const std::vector<double>&)>("avg", Avg<double>());
 ```
 
-It does *not* support function overloading.
+It does *not* support function overloading. If you want to provide
+a function that supports different parameter types (i.e. a sum for
+vector of ints, floats and doubles), it can receive a raw Value
+and do the template matching itself. See `test.cpp:Sum` for an example.

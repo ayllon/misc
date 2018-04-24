@@ -10,9 +10,7 @@
 
 namespace Arithmetic {
 
-/**
- * @brief Implements the parsing logic, generating a tree
- */
+/// @brief Implements the parsing logic, generating a tree
 class Parser {
 public:
 

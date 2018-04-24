@@ -1,7 +1,9 @@
 #include <boost/test/unit_test.hpp>
 #include <cmath>
+#include <iostream>
 #include "ArithmeticEval/Exception.h"
 #include "ArithmeticEval/Parser.h"
+#include "ArithmeticEval/Util.h"
 
 using namespace Arithmetic;
 
@@ -35,6 +37,37 @@ struct Avg {
   }
 };
 
+struct Sum {
+  struct SumVisitor: public boost::static_visitor<double> {
+
+    template <typename T>
+    typename std::enable_if<is_numeric<T, false>::value, double>::type
+    operator() (const std::vector<T> &v) const {
+      double t = 0;
+      for (auto n : v) {
+        t += n;
+      }
+      return t;
+    }
+
+    template <typename T>
+    typename std::enable_if<!is_numeric<T, false>::value, double>::type
+    operator() (const std::vector<T> &v) const {
+      throw Exception("Unsupported vector type for sum");
+    }
+
+    template <typename T>
+    typename std::enable_if<!is_vector<T>::value, double>::type
+    operator() (const T&) const {
+      throw Exception("Unsupported type for sum");
+    };
+  };
+
+  double operator() (const Value &v) {
+    return boost::apply_visitor(SumVisitor(), v);
+  }
+};
+
 struct VarFixture {
   std::map<std::string, Value> variables{
       {"ID", 42},
@@ -58,6 +91,7 @@ struct VarFixture {
     parser.addFunction<std::string(const std::string&)>("tolower", StrLower());
     parser.addFunction<double(const std::vector<int>&)>("size", Len());
     parser.addFunction<double(const std::vector<double>&)>("avg", Avg<double>());
+    parser.addFunction<double(const Value&)>("sum", Sum());
   }
 };
 
@@ -158,6 +192,11 @@ BOOST_AUTO_TEST_CASE(Vector, *boost::unit_test::tolerance(0.001)) {
   BOOST_CHECK_EQUAL(parser.parse("size(vector_int)")->value<double>(variables), 3);
   BOOST_TEST(parser.parse("vector_int")->value<std::vector<int>>(variables) == original_int, boost::test_tools::per_element());
   BOOST_TEST(parser.parse("avg(vector_double)")->value<double>(variables) == 5.333);
+}
+
+BOOST_AUTO_TEST_CASE(ValueFunction) {
+  BOOST_CHECK_EQUAL(parser.parse("sum(vector_int)")->value<double>(variables), 6);
+  BOOST_CHECK_EQUAL(parser.parse("sum(vector_double)")->value<double>(variables), 16);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
