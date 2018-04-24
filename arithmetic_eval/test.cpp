@@ -5,9 +5,13 @@
 
 using namespace Arithmetic;
 
-struct StrLen {
+struct Len {
   double operator() (const std::string &str) {
     return str.size();
+  }
+
+  double operator() (const std::vector<int> &v) {
+    return v.size();
   }
 };
 
@@ -20,6 +24,17 @@ struct StrLower {
   }
 };
 
+template <typename T>
+struct Avg {
+  double operator() (const std::vector<T>& v) {
+    double t = 0;
+    for (auto n : v) {
+      t += n;
+    }
+    return t / v.size();
+  }
+};
+
 struct VarFixture {
   std::map<std::string, Value> variables{
       {"ID", 42},
@@ -27,7 +42,9 @@ struct VarFixture {
       {"b", 20},
       {"pi", 3.14},
       {"name", std::string{"ABCDEF"}},
-      {"description", std::string{"blah bleh blih"}}
+      {"description", std::string{"blah bleh blih"}},
+      {"vector_int", std::vector<int>{1, 2, 3}},
+      {"vector_double", std::vector<double>{0.4, 5.1, 10.5}},
   };
   Parser parser;
 
@@ -37,8 +54,10 @@ struct VarFixture {
     parser.addFunction("pow", ::pow);
     parser.addConstant("true", 1.);
     parser.addConstant("false", 0.);
-    parser.addFunction<double(const std::string&)>("len", StrLen());
+    parser.addFunction<double(const std::string&)>("len", Len());
     parser.addFunction<std::string(const std::string&)>("tolower", StrLower());
+    parser.addFunction<double(const std::vector<int>&)>("size", Len());
+    parser.addFunction<double(const std::vector<double>&)>("avg", Avg<double>());
   }
 };
 
@@ -131,6 +150,14 @@ BOOST_AUTO_TEST_CASE(StringVariables) {
   BOOST_CHECK_EQUAL(parser.parse("name")->value<std::string>(variables), "ABCDEF");
   BOOST_CHECK_EQUAL(parser.parse("len(description)")->value<double>(variables), 14);
   BOOST_CHECK_EQUAL(parser.parse("tolower(name) + \" ID\"")->value<std::string>(variables), "abcdef ID");
+}
+
+BOOST_AUTO_TEST_CASE(Vector, *boost::unit_test::tolerance(0.001)) {
+  auto original_int = Arithmetic::get<std::vector<int>>(variables["vector_int"]);
+
+  BOOST_CHECK_EQUAL(parser.parse("size(vector_int)")->value<double>(variables), 3);
+  BOOST_TEST(parser.parse("vector_int")->value<std::vector<int>>(variables) == original_int, boost::test_tools::per_element());
+  BOOST_TEST(parser.parse("avg(vector_double)")->value<double>(variables) == 5.333);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
