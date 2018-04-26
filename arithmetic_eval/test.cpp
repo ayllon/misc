@@ -199,4 +199,12 @@ BOOST_AUTO_TEST_CASE(ValueFunction) {
   BOOST_CHECK_EQUAL(parser.parse("sum(vector_double)")->value<double>(variables), 16);
 }
 
+BOOST_AUTO_TEST_CASE(UnaryOperators) {
+  BOOST_CHECK_EQUAL(parser.parse("+1")->value<double>(), 1);
+  BOOST_CHECK_EQUAL(parser.parse("-1")->value<double>(), -1);
+  BOOST_CHECK_EQUAL(parser.parse("-(+1)")->value<double>(), -1);
+  BOOST_CHECK_EQUAL(parser.parse("5+(-2)")->value<double>(), 3);
+  BOOST_CHECK_EQUAL(parser.parse("2^-1")->value<double>(), 0.5);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

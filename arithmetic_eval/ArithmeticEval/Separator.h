@@ -11,6 +11,8 @@ struct ArithmeticSeparator {
   /// get next token
   template<typename InputIterator, typename Token>
   bool operator()(InputIterator &next, InputIterator end, Token &tok) {
+    const std::string singleCharOperators{"/*-+()"};
+
     tok.clear();
 
     // Skip spaces
@@ -47,15 +49,15 @@ struct ArithmeticSeparator {
       }
       tok.assign(begin, next);
     }
-    // Parenthesis are individual
-    else if (*next == '(' || *next == ')') {
+    // Single char operators
+    else if (singleCharOperators.find(*next) != std::string::npos) {
       tok.assign(next, next + 1);
       ++next;
     }
-    // Just bind together operator characters, except parenthesis
+    // Just bind together the rest
     else {
       auto begin = next;
-      while (next != end && !(std::isalnum(*next) || std::isspace(*next) || *next == '(' || *next == ')')) {
+      while (next != end && !(std::isalnum(*next) || std::isspace(*next) || singleCharOperators.find(*next) != std::string::npos)) {
         ++next;
       }
       tok.assign(begin, next);

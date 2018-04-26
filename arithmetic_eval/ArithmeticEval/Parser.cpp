@@ -35,11 +35,62 @@ public:
 
 
 template <typename T>
-class Operator: public Node {
+class UnaryOperator: public Node {
+public:
+  typedef std::function<T(T)> Functor;
+
+  UnaryOperator(const std::string &repr, Functor f, std::unique_ptr<Node> a):
+      m_repr(repr), m_f(f), m_a(std::move(a)) {
+  }
+
+  std::string repr() const override {
+    return m_repr;
+  }
+
+  void visit(Visitor *visitor) const override {
+    visitor->enter(this);
+    m_a->visit(visitor);
+    visitor->exit(this);
+  }
+
+  Value value(const Context &ctx) const override {
+    return value_impl<T>(ctx);
+  }
+
+  bool isConstant() const override {
+    return m_a->isConstant();
+  }
+
+private:
+  std::string m_repr;
+  Functor m_f;
+  std::unique_ptr<Node> m_a;
+
+  template <typename TCast>
+  typename std::enable_if<!std::is_same<TCast, Value>::value, Value>::type
+  value_impl(const Context &ctx) const {
+    try {
+      return m_f(Arithmetic::get<TCast>(m_a->value(ctx)));
+    }
+    catch (const boost::bad_get&) {
+      throw Exception("Invalid types passed to the operator " + m_repr);
+    }
+  }
+
+  template <typename TCast>
+  typename std::enable_if<std::is_same<TCast, Value>::value, Value>::type
+  value_impl(const Context &ctx) const {
+    return m_f(m_a->value(ctx));
+  }
+};
+
+
+template <typename T>
+class BinaryOperator: public Node {
 public:
   typedef std::function<T(T, T)> Functor;
 
-  Operator(const std::string &repr, Functor f, std::unique_ptr<Node> a, std::unique_ptr<Node> b):
+  BinaryOperator(const std::string &repr, Functor f, std::unique_ptr<Node> a, std::unique_ptr<Node> b):
       m_repr(repr), m_f(f), m_a(std::move(a)), m_b(std::move(b)) {
   }
 
@@ -91,10 +142,51 @@ public:
   virtual bool isLeftAssociative() const = 0;
 };
 
+
+template <typename T>
+struct identity : public std::unary_function<T, T>
+{
+  T operator()(const T& x) const {
+    return x;
+  }
+};
+
+template <typename T>
+class UnaryOperatorFactory: public OperatorFactory {
+public:
+
+  UnaryOperatorFactory(typename UnaryOperator<T>::Functor f, unsigned precedence, const std::string &repr):
+      m_f(f), m_precedence(precedence), m_repr(repr) {
+  }
+
+  size_t nArgs() const override {
+    return 1;
+  }
+
+  unsigned getPrecedence() const override {
+    return m_precedence;
+  }
+
+  bool isLeftAssociative() const override {
+    return true;
+  }
+
+  std::unique_ptr<Node> instantiate(std::vector<std::unique_ptr<Node>> args) const override {
+    assert(args.size() == 1);
+    return std::unique_ptr<Node>{new UnaryOperator<T>{m_repr, m_f, std::move(args[0])}};
+  }
+
+private:
+  typename UnaryOperator<T>::Functor m_f;
+  unsigned m_precedence;
+  bool m_leftAssociative;
+  std::string m_repr;
+};
+
 template <typename T>
 class BinaryOperatorFactory: public OperatorFactory {
 public:
-  BinaryOperatorFactory(typename Operator<T>::Functor f, unsigned precedence, bool leftAssociative, const std::string &repr):
+  BinaryOperatorFactory(typename BinaryOperator<T>::Functor f, unsigned precedence, bool leftAssociative, const std::string &repr):
       m_f(f), m_precedence(precedence), m_leftAssociative(leftAssociative), m_repr(repr) {
   }
 
@@ -112,11 +204,11 @@ public:
 
   std::unique_ptr<Node> instantiate(std::vector<std::unique_ptr<Node>> args) const override {
     assert(args.size() == 2);
-    return std::unique_ptr<Node>{new Operator<T>{m_repr, m_f, std::move(args[0]), std::move(args[1])}};
+    return std::unique_ptr<Node>{new BinaryOperator<T>{m_repr, m_f, std::move(args[0]), std::move(args[1])}};
   }
 
 private:
-  typename Operator<T>::Functor m_f;
+  typename BinaryOperator<T>::Functor m_f;
   unsigned m_precedence;
   bool m_leftAssociative;
   std::string m_repr;
@@ -127,7 +219,9 @@ static std::map<std::string, std::shared_ptr<OperatorFactory>> knownOperators = 
     {"(", nullptr},
     {")", nullptr},
     {",", nullptr},
-    {"^",  std::make_shared<BinaryOperatorFactory<double>>(pow(), 1, true, "^")},
+    {"^",  std::make_shared<BinaryOperatorFactory<double>>(pow(), 1, false, "^")},
+    {"~-", std::make_shared<UnaryOperatorFactory<double>>(std::negate<double>(), 2, "-")},
+    {"~+", std::make_shared<UnaryOperatorFactory<double>>(identity<double>(), 2, "+")},
     {"*",  std::make_shared<BinaryOperatorFactory<double>>(std::multiplies<double>(), 3, true, "*")},
     {"/",  std::make_shared<BinaryOperatorFactory<double>>(std::divides<double>(), 3, true, "/")},
     {"%",  std::make_shared<BinaryOperatorFactory<double>>(mod(), 3, true, "%")},
@@ -231,13 +325,24 @@ std::unique_ptr<Node> Parser::parse(const std::string &expr) const {
   std::vector<std::unique_ptr<Node>> compiled;
   boost::tokenizer<ArithmeticSeparator> tokenizer(expr, ArithmeticSeparator());
 
+  std::string prevToken;
+
   for (auto token : tokenizer) {
-    // Operator
     auto op_i = knownOperators.find(token);
-    if (op_i != knownOperators.end()) {
+    auto op_prev = knownOperators.find(prevToken);
+
+    // Hack for unary + and -
+    // If they are at the beginning, just after a '(', or after another operator
+    if ((token == "-" || token == "+") && (prevToken.empty() || (op_prev != knownOperators.end() && op_prev->first != ")"))) {
+      token = "~" + token;
+      op_i = knownOperators.find(token);
+      operators.emplace_back(*op_i);
+    }
+    // Regular operator
+    else if (op_i != knownOperators.end()) {
       // Open parenthesis
       if (op_i->first == "(") {
-        operators.push_back(*op_i);
+        operators.emplace_back(*op_i);
       }
       // Close parenthesis and commas
       else if (op_i->first == ")" || op_i->first == ",") {
@@ -261,7 +366,7 @@ std::unique_ptr<Node> Parser::parse(const std::string &expr) const {
           if (!(last_op == nullptr ||
                 (last_op->getPrecedence() < op_i->second->getPrecedence() ||
                  (last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative()))
-          ) || operators.back().first == "(") {
+          ) || operators.back().first == "(" || op_i->first[0] == '~') {
             break;
           }
 
@@ -298,6 +403,8 @@ std::unique_ptr<Node> Parser::parse(const std::string &expr) const {
     else {
       throw Exception("Unknown token '" + token + "'");
     }
+
+    prevToken = token;
   }
 
   for (auto i = operators.rbegin(); i != operators.rend(); ++i) {
