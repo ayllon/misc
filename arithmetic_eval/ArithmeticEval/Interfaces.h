@@ -62,7 +62,7 @@ public:
 
   /// Return an instance of the function
   /// @param args A vector with nArgs() nodes that are to be the children/parameters of the function
-  virtual std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const = 0;
+  virtual std::unique_ptr<Node> instantiate(std::vector<std::unique_ptr<Node>> args) const = 0;
 };
 
 } // namespace Arithmetic

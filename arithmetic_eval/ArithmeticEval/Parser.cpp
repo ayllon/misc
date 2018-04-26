@@ -39,8 +39,8 @@ class Operator: public Node {
 public:
   typedef std::function<T(T, T)> Functor;
 
-  Operator(const std::string &repr, Functor f, const std::shared_ptr<Node> &a, const std::shared_ptr<Node> &b):
-      m_repr(repr), m_f(f), m_a(a), m_b(b) {
+  Operator(const std::string &repr, Functor f, std::unique_ptr<Node> a, std::unique_ptr<Node> b):
+      m_repr(repr), m_f(f), m_a(std::move(a)), m_b(std::move(b)) {
   }
 
   std::string repr() const override {
@@ -61,7 +61,7 @@ public:
 private:
   std::string m_repr;
   Functor m_f;
-  std::shared_ptr<Node> m_a, m_b;
+  std::unique_ptr<Node> m_a, m_b;
 
   template <typename TCast>
   typename std::enable_if<!std::is_same<TCast, Value>::value, Value>::type
@@ -106,9 +106,9 @@ public:
     return m_leftAssociative;
   }
 
-  std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const override {
+  std::unique_ptr<Node> instantiate(std::vector<std::unique_ptr<Node>> args) const override {
     assert(args.size() == 2);
-    return std::make_shared<Operator<T>>(m_repr, m_f, args[0], args[1]);
+    return std::unique_ptr<Node>{new Operator<T>{m_repr, m_f, std::move(args[0]), std::move(args[1])}};
   }
 
 private:
@@ -189,21 +189,26 @@ Parser::Parser() {
 }
 
 
-static void instantiateNode(const std::shared_ptr<FunctionFactory> &factory, std::vector<std::shared_ptr<Node>> &compiled) {
+static void instantiateNode(const std::shared_ptr<FunctionFactory> &factory, std::vector<std::unique_ptr<Node>> &compiled) {
   if (factory->nArgs() > compiled.size()) {
     throw Exception("Not enough parameters");
   }
 
-  std::vector<std::shared_ptr<Node>> args(compiled.rbegin(), compiled.rbegin() + factory->nArgs());
+  typedef typename std::vector<std::unique_ptr<Node>>::reverse_iterator iter_type;
+
+  std::vector<std::unique_ptr<Node>> args(
+      std::move_iterator<iter_type>(compiled.rbegin()),
+      std::move_iterator<iter_type>(compiled.rbegin() + factory->nArgs())
+  );
   std::reverse(args.begin(), args.end());
   compiled.resize(compiled.size() - factory->nArgs());
-  compiled.push_back(factory->instantiate(args));
+  compiled.push_back(factory->instantiate(std::move(args)));
 }
 
 
-std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
+std::unique_ptr<Node> Parser::parse(const std::string &expr) const {
   std::vector<std::pair<std::string, std::shared_ptr<FunctionFactory>>> operators;
-  std::vector<std::shared_ptr<Node>> compiled;
+  std::vector<std::unique_ptr<Node>> compiled;
   boost::tokenizer<ArithmeticSeparator> tokenizer(expr, ArithmeticSeparator());
 
   for (auto token : tokenizer) {
@@ -286,7 +291,7 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
     throw Exception("Malformed expression");
   }
 
-  return compiled.back();
+  return std::move(compiled.back());
 }
 
 } // namespace Arithmetic2

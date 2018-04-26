@@ -22,7 +22,7 @@ public:
   /// @return The root of the parsed expression
   /// @throw  If there is an error parsing the expression
   /// @note   Function instantiations are inserted into the tree in this stage
-  std::shared_ptr<Node> parse(const std::string &expr) const;
+  std::unique_ptr<Node> parse(const std::string &expr) const;
 
   /// Register a std::function into the parser
   /// @param name The name used to call the function on an expression

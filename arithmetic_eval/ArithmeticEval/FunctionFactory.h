@@ -35,8 +35,8 @@ public:
   /// @param repr A string representation of the function (the name)
   /// @param f    The function to be wrapped
   /// @param args A vector with the children nodes (function arguments)
-  FunctionNodeGenerator(const std::string &repr, FuncType f, const std::vector<std::shared_ptr<Node>> &args) :
-      m_repr(repr), m_f(f), m_args(args) {}
+  FunctionNodeGenerator(const std::string &repr, FuncType f, std::vector<std::unique_ptr<Node>> args) :
+      m_repr(repr), m_f(f), m_args(std::move(args)) {}
 
   /// Return the string representation (name) of this function node
   std::string repr() const override {
@@ -50,7 +50,7 @@ public:
     }
     else {
       visitor->enter(this);
-      for (auto arg: m_args) {
+      for (auto& arg: m_args) {
         arg->visit(visitor);
       }
       visitor->exit(this);
@@ -67,7 +67,7 @@ public:
 private:
   std::string m_repr;
   FuncType m_f;
-  const std::vector<std::shared_ptr<Node>> m_args;
+  const std::vector<std::unique_ptr<Node>> m_args;
 
   /// Base case for the argument expansion: all vector entries have been expanded
   /// @tparam Ts  Variable number of arguments accepted.
@@ -125,8 +125,8 @@ public:
 
   /// Return an instance of the function
   /// @param args A vector with nArgs() nodes that are to be the children/parameters of the function
-  std::shared_ptr<Node> instantiate(const std::vector<std::shared_ptr<Node>> &args) const override {
-    return std::make_shared<FunctionNodeGenerator<R, Args...>>(m_name, m_f, args);
+  std::unique_ptr<Node> instantiate(std::vector<std::unique_ptr<Node>> args) const override {
+    return std::unique_ptr<Node>{new FunctionNodeGenerator<R, Args...>{m_name, m_f, std::move(args)}};
   }
 
 private:
