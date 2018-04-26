@@ -59,9 +59,9 @@ public:
   }
 
 private:
+  std::string m_repr;
   Functor m_f;
   std::shared_ptr<Node> m_a, m_b;
-  std::string m_repr;
 
   template <typename TCast>
   typename std::enable_if<!std::is_same<TCast, Value>::value, Value>::type
@@ -235,7 +235,7 @@ std::shared_ptr<Node> Parser::parse(const std::string &expr) const {
           auto last_op = dynamic_cast<OperatorFactory*>(operators.back().second.get());
           if (!(last_op == nullptr ||
                 (last_op->getPrecedence() < op_i->second->getPrecedence() ||
-                 last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative())
+                 (last_op->getPrecedence() == op_i->second->getPrecedence() && op_i->second->isLeftAssociative()))
           ) || operators.back().first == "(") {
             break;
           }
