@@ -43,7 +43,7 @@ struct CastVisitor<double>: public boost::static_visitor<double> {
   /// @note A string could be parsed for a double value, but we are a bit more picky
   template <typename T>
   typename std::enable_if<!is_numeric<T, true>::value, double>::type
-  operator() (T v) const {
+  operator() (const T&) const {
     throw Exception("Can not convert types");
   };
 };
