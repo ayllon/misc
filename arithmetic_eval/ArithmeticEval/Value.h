@@ -55,7 +55,7 @@ struct CastVisitor<double>: public boost::static_visitor<double> {
 /// @return      The value contained by val
 /// @throw Exception if the content can not be casted
 template <typename D>
-D get(const Value &val) {
+inline D get(const Value &val) {
   return boost::get<D>(val);
 };
 
@@ -66,7 +66,7 @@ D get(const Value &val) {
 /// @return      The content of the value as a double
 /// @throw Exception if the content can not be casted
 template <>
-double get<double>(const Value &val) {
+inline double get<double>(const Value &val) {
   return boost::apply_visitor(CastVisitor<double>(), val);
 };
 
@@ -75,7 +75,7 @@ double get<double>(const Value &val) {
 /// @param val   The value to pass as-is
 /// @return      Exactly what was received
 template <>
-const Value& get<const Value&>(const Value &val) {
+inline const Value& get<const Value&>(const Value &val) {
   return val;
 };
 
