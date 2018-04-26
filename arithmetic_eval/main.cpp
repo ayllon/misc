@@ -71,7 +71,7 @@ int main() {
     expr->visit(&graph);
     std::cout << graph.str() << std::endl;
 
-    std::cerr << expr->value() << std::endl;
+    std::cerr << expr->value<double>() << std::endl;
   }
   catch (std::exception const &e) {
     std::cerr << "Error! " << e.what() << std::endl;
