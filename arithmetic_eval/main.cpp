@@ -59,6 +59,8 @@ int main() {
 
     Parser parser;
 
+    parser.addConstant("pi", M_PI);
+    parser.addConstant("e", M_E);
     parser.addFunction("sqrt", ::sqrt);
     parser.addFunction<double(const std::string&)>("len", TestStrFunc());
     parser.addFunction("ln", ::log);

@@ -44,6 +44,9 @@ public:
   /// @param ctx  A dictionary of variable values
   virtual Value value(const Context &ctx = {}) const = 0;
 
+  /// Return true is this node can be evaluated to a constant value (does not require any variable)
+  virtual bool isConstant() const = 0;
+
   template <typename T>
   T value(const Context &ctx = {}) const {
     return Arithmetic::get<T>(value(ctx));

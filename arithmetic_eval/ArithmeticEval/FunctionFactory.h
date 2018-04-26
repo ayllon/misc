@@ -64,6 +64,15 @@ public:
     return expand_args(ctx);
   }
 
+  /// A function node is constant if there are no parameters or all are constants
+  bool isConstant() const override {
+    bool _constant = true;
+    for (auto& arg: m_args) {
+      _constant &= arg->isConstant();
+    }
+    return _constant;
+  }
+
 private:
   std::string m_repr;
   FuncType m_f;

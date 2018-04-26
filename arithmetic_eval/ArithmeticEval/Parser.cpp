@@ -58,6 +58,10 @@ public:
     return value_impl<T>(ctx);
   }
 
+  bool isConstant() const override {
+    return m_a->isConstant() && m_b->isConstant();
+  }
+
 private:
   std::string m_repr;
   Functor m_f;
@@ -156,6 +160,10 @@ public:
     return m_val;
   }
 
+  bool isConstant() const override {
+    return true;
+  }
+
 private:
   Value m_val;
 };
@@ -181,6 +189,10 @@ public:
     return var_i->second;
   }
 
+  bool isConstant() const override {
+    return false;
+  }
+
 private:
   std::string m_name;
 };
@@ -202,7 +214,15 @@ static void instantiateNode(const std::shared_ptr<FunctionFactory> &factory, std
   );
   std::reverse(args.begin(), args.end());
   compiled.resize(compiled.size() - factory->nArgs());
-  compiled.push_back(factory->instantiate(std::move(args)));
+
+  auto newNode = factory->instantiate(std::move(args));
+
+  // Fold the node if is constant
+  if (newNode->isConstant()) {
+    newNode.reset(new Constant(newNode->value({})));
+  }
+
+  compiled.emplace_back(std::move(newNode));
 }
 
 
