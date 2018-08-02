@@ -1,0 +1,18 @@
+#!/usr/bin/python3
+import os
+import sys
+
+if len(sys.argv) < 2:
+    print("Missing filenames")
+    sys.exit(-1)
+
+for f in sys.argv[1:]:
+    print(f"Evicting {f}")
+    fd = os.open(f, os.O_RDONLY)
+    try:
+        os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_DONTNEED)
+    except Exception as e:
+        print(f"Failed to evict: {e}")
+    finally:
+        os.close(fd)
+
