@@ -13,7 +13,12 @@ log = logging.getLogger(__name__)
 
 
 class OpWrapper(object):
-    LOGIN_UUID = '001'
+    LOGIN_UUID      = '001'
+    CREDITCARD_UUID = '002'
+    NOTE_UUID       = '003'
+    PASSWORD_UUID   = '005'
+    DOCUMENT_UUID   = '006'
+    KEYVALUE_UUID   = '101'
 
     def __init__(self, op_path, signinaddress, emailaddress, secretkey, out):
         self.__op = op_path
@@ -60,7 +65,7 @@ class OpWrapper(object):
         cmd = ['list', 'items', f'--vault={vault}']
         return json.loads(self.__run(cmd))
 
-    def get_password(self, vault, item):
+    def get_login(self, vault, item):
         cmd = ['get', 'item', f'--vault={vault}', item]
         user, passwd = None, None
         for f in json.loads(self.__run(cmd))['details']['fields']:
@@ -71,11 +76,22 @@ class OpWrapper(object):
                 passwd = f['value']
         return user, passwd
 
+    def get_password(self, vault, item):
+        cmd = ['get', 'item', f'--vault={vault}', item]
+        return json.loads(self.__run(cmd))['details']['password']
+
     def __handle_login(self, vault, item):
         overview = item['overview']
         log.info(f'Got login {overview["title"]}')
         overview['vault'] = vault
-        overview['user'], overview['password'] = self.get_password(vault, overview['title'])
+        overview['user'], overview['password'] = self.get_login(vault, overview['title'])
+        self.__out(overview)
+
+    def __handle_password(self, vault, item):
+        overview = item['overview']
+        log.info(f'Got password {overview["title"]}')
+        overview['vault'] = vault
+        overview['user'], overview['password'] = None, self.get_password(vault, overview['title'])
         self.__out(overview)
 
     def dump(self):
@@ -86,6 +102,8 @@ class OpWrapper(object):
             for i in items:
                 if i['templateUuid'] == self.LOGIN_UUID:
                     self.__handle_login(v, i)
+                elif i['templateUuid'] == self.PASSWORD_UUID:
+                    self.__handle_password(v, i)
                 else:
                     log.warning(f'Ignoring item {i["overview"]["title"]} with unknown type {i["templateUuid"]}')
 
