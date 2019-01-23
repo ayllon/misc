@@ -49,7 +49,7 @@ class OpWrapper(object):
         ]
         log.info('Signing in')
         passwd = getpass.getpass('1Password master password')
-        return self.__run(cmd, skip_session=True, instr=passwd)
+        return self.__run(cmd, skip_session=True, instr=passwd).decode('utf8').strip()
 
     def __get_session(self):
         if not self.__session:
