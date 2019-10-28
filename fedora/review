@@ -1,6 +1,9 @@
 rpmlint output
 ==============
+On source rpm and binary rpms
 
+fedora-review output
+====================
 
 MUST
 ====
@@ -53,6 +56,8 @@ MUST
 [  ] The package MUST successfully compile and build into binary rpms on at least one primary architecture.
 [  ] If the package does not successfully compile, build or work on an architecture, then those architectures should be listed in the spec in ExcludeArch.
 [  ] Package installs properly.
+
+[  ] The tar.gz inside the source rpm and the upstream url match
 
 SHOULD
 ======
