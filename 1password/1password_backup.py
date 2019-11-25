@@ -71,9 +71,9 @@ class OpWrapper(object):
         for f in json.loads(self.__run(cmd))['details']['fields']:
             designation = f.get('designation', '')
             if designation == 'username':
-                user = f['value']
+                user = f.get('value', '')
             elif designation == 'password':
-                passwd = f['value']
+                passwd = f.get('value', '')
         return user, passwd
 
     def get_password(self, vault, item):
